@@ -1,0 +1,35 @@
+{
+  "background_color": "#140a08",
+  "description": "A golden swarm drifts through the dark of a sleeping god. One touch: hold to constrict, release to bloom.",
+  "display": "standalone",
+  "icons": [
+    {
+      "sizes": "180x180",
+      "src": "icons/icon-180.png",
+      "type": "image/png"
+    },
+    {
+      "sizes": "192x192",
+      "src": "icons/icon-192.png",
+      "type": "image/png"
+    },
+    {
+      "sizes": "512x512",
+      "src": "icons/icon-512.png",
+      "type": "image/png"
+    },
+    {
+      "purpose": "maskable",
+      "sizes": "512x512",
+      "src": "icons/icon-512-maskable.png",
+      "type": "image/png"
+    }
+  ],
+  "name": "GULLET",
+  "orientation": "portrait",
+  "scope": "./",
+  "short_name": "GULLET",
+  "start_url": "./index.html",
+  "theme_color": "#140a08",
+  "id": "./index.html"
+}
