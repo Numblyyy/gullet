@@ -1,0 +1,1572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="RANGER TERMINAL">
+<meta name="theme-color" content="#050805">
+<link rel="manifest" href='data:application/manifest+json,{"name":"RANGER TERMINAL","short_name":"RANGER","display":"fullscreen","orientation":"portrait","background_color":"%23050805","theme_color":"%23050805","start_url":"."}'>
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='36' fill='%23050805'/%3E%3Ctext x='90' y='124' font-size='96' text-anchor='middle' fill='%2333ff66' font-family='monospace' font-weight='bold'%3ER%3C/text%3E%3Crect x='24' y='24' width='132' height='132' rx='24' fill='none' stroke='%2333ff66' stroke-width='6'/%3E%3C/svg%3E">
+<title>RANGER TERMINAL v2.3.1</title>
+<style>
+/* ============ RANGER TERMINAL v2.3.1 — CINDER RIDGE SANCTUARY ============ */
+:root{
+  --grn:#33ff66; --amb:#ffb000; --red:#ff4444;
+  --bg:#050805; --dim:rgba(51,255,102,.55);
+  --panel1:#0d1a0d; --panel2:#060c06;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;
+  touch-action:manipulation;-webkit-user-select:none;user-select:none;margin:0;padding:0}
+body{
+  background:#000;color:var(--grn);
+  font-family:"Courier New",Courier,monospace;font-size:14px;line-height:1.45;
+  padding:env(safe-area-inset-top) env(safe-area-inset-right)
+          env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+.hidden{display:none!important}
+/* phosphor glow applied via one parent class */
+.phos{color:var(--grn);text-shadow:0 0 6px currentColor,0 0 18px rgba(51,255,102,.35)}
+.phos-amber{color:var(--amb);text-shadow:0 0 6px currentColor,0 0 18px rgba(255,176,0,.35)}
+.phos-red{color:var(--red);text-shadow:0 0 6px currentColor,0 0 18px rgba(255,68,68,.35)}
+.dim{color:var(--dim)}
+.small{font-size:11px}
+h2.sect{font-size:15px;letter-spacing:.18em;margin:6px 0 8px;font-weight:700}
+
+/* ---------- chunky beveled panels ---------- */
+.panel{
+  background:linear-gradient(180deg,var(--panel1),var(--panel2));
+  border-top:2px solid #3a5f3a;border-left:2px solid #3a5f3a;
+  border-bottom:2px solid #0a1a0a;border-right:2px solid #0a1a0a;
+  border-radius:6px;padding:10px;margin:8px;
+}
+.display{ /* sunken screen inset */
+  background:#020402;
+  border-top:2px solid #0a1a0a;border-left:2px solid #0a1a0a;
+  border-bottom:2px solid #2a4a2a;border-right:2px solid #2a4a2a;
+  border-radius:4px;padding:8px;overflow-y:auto;
+}
+/* phosphor glow, committed: every screen readout glows */
+#radiolog,#termout{text-shadow:0 0 5px rgba(51,255,102,.45)}
+/* ---------- chunky buttons ---------- */
+.btn{
+  font-family:inherit;font-size:14px;font-weight:700;letter-spacing:.1em;
+  color:var(--grn);background:linear-gradient(180deg,#12240f,#081208);
+  border-top:3px solid #3f6b3f;border-left:3px solid #3f6b3f;
+  border-bottom:3px solid #081208;border-right:3px solid #081208;
+  border-radius:8px;padding:14px 10px;min-height:52px;width:100%;
+  text-transform:uppercase;touch-action:manipulation;cursor:pointer;
+}
+.btn:active,.btn.pressed{
+  border-top:3px solid #081208;border-left:3px solid #081208;
+  border-bottom:3px solid #3f6b3f;border-right:3px solid #3f6b3f;
+  background:linear-gradient(180deg,#081208,#12240f);color:#9dffb8;
+}
+.btn.warn{color:var(--amb)}
+.btn.danger{color:var(--red)}
+.btn-row{display:flex;gap:8px;margin-top:8px}
+.btn-row .btn{flex:1}
+
+/* ---------- CRT overlay stack (exactly 3 fixed layers) ---------- */
+.scanlines{position:fixed;inset:0;pointer-events:none;z-index:999;
+  background:
+    repeating-linear-gradient(0deg,rgba(0,0,0,.22) 0 1px,transparent 1px 3px),
+    repeating-linear-gradient(90deg,rgba(255,60,60,.030) 0 1px,rgba(60,255,120,.030) 1px 2px,rgba(80,140,255,.030) 2px 3px)}
+.vignette{position:fixed;inset:0;pointer-events:none;z-index:998;
+  background:radial-gradient(ellipse at center,transparent 55%,rgba(0,0,0,.55) 100%)}
+.crt-flicker{position:fixed;inset:0;pointer-events:none;z-index:997;
+  background:#0a2a0a;opacity:0;animation:flicker 4.2s steps(1) infinite}
+@keyframes flicker{0%,100%{opacity:0}48%{opacity:.12}50%{opacity:0}72%{opacity:.14}}
+
+/* ---------- boot screen ---------- */
+#boot{position:fixed;inset:0;background:#000;z-index:2000;padding:26px 18px;
+  font-size:14px;white-space:pre-wrap}
+#bootlog{min-height:60vh}
+#bootcursor{display:inline-block;animation:blink 0.8s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+#boottap{position:absolute;bottom:12%;left:0;right:0;text-align:center;font-size:12px;
+  letter-spacing:.2em;color:var(--dim);animation:blink 1.2s steps(1) infinite}
+
+/* ---------- app frame ---------- */
+#app{position:fixed;inset:0;display:flex;flex-direction:column;background:var(--bg)}
+#statusbar{display:flex;align-items:center;gap:10px;padding:8px 10px;
+  border-bottom:2px solid #1a3a1a;background:#040a04;font-size:12px;
+  letter-spacing:.08em;white-space:nowrap}
+#statusbar .grow{flex:1;overflow:hidden;text-overflow:ellipsis}
+#clock{font-weight:700}
+#mutebtn{width:auto;min-height:44px;padding:6px 10px;font-size:11px;margin:0}
+
+/* ---------- alert banner ---------- */
+#alertbanner{border-top:3px solid var(--red);border-bottom:3px solid var(--red);
+  background:repeating-linear-gradient(45deg,#2a0808 0 14px,#1a0404 14px 28px);
+  padding:10px;z-index:500}
+#alertbanner .msg{font-weight:700;font-size:15px;letter-spacing:.1em;margin-bottom:8px}
+#alertbanner.escalate .msg{animation:blink .4s steps(1) infinite}
+#alertbadge{padding:4px 10px;font-size:11px;letter-spacing:.15em;text-align:center;
+  background:#2a0808;border:1px solid var(--red);color:var(--red)}
+
+/* ---------- tab panels ---------- */
+#panels{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;position:relative}
+.panel-tab{display:none;padding-bottom:12px}
+.panel-tab.active{display:block}
+#tabnav{display:flex;border-top:2px solid #1a3a1a;background:#040a04;
+  padding:6px 4px calc(6px + env(safe-area-inset-bottom));gap:4px}
+#tabnav .btn{padding:12px 4px;min-height:56px;font-size:11px;letter-spacing:.06em}
+#tabnav .btn.on{color:#9dffb8;border-top-color:#081208;border-left-color:#081208;
+  border-bottom-color:#3f6b3f;border-right-color:#3f6b3f;background:#0a1a0a}
+
+/* ---------- COMMS ---------- */
+#radiolog{height:44vh;font-size:13px}
+#radiolog .rx{color:var(--grn)}
+#radiolog .rx b{color:#9dffb8}
+#radiolog .txline{color:var(--amb)}
+#radiolog .urgent{color:var(--red);font-weight:700}
+#radiolog .sys{color:var(--dim)}
+#txrow{display:flex;align-items:center;gap:10px;margin:8px}
+#txind{font-size:13px;letter-spacing:.15em;min-width:90px}
+#txind.on{color:var(--red);animation:blink .5s steps(1) infinite}
+#meter{display:flex;gap:4px;flex:1;height:26px;align-items:flex-end}
+#meter i{flex:1;background:#0a2a0a;border:1px solid #1a4a1a;min-height:4px}
+#meter i.hot{background:var(--grn)}
+#meter i.hot2{background:var(--amb)}
+#ptt{min-height:84px;font-size:18px;border-radius:14px}
+
+/* ---------- FENCE ---------- */
+#fencesummary{font-size:12px;letter-spacing:.08em;margin:8px 8px 4px}
+#fencegrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:8px}
+.sector{background:linear-gradient(180deg,var(--panel1),var(--panel2));
+  border-top:2px solid #3a5f3a;border-left:2px solid #3a5f3a;
+  border-bottom:2px solid #0a1a0a;border-right:2px solid #0a1a0a;
+  border-radius:6px;padding:10px;text-align:center;transition:opacity .15s}
+.sector .kv{font-size:26px;font-weight:700;margin:4px 0}
+.sector.on{color:var(--grn)}
+.sector.off{color:var(--dim)}
+.sector.warn{border-color:var(--red);color:var(--red)}
+.sector.warn .kv{color:var(--red)}
+.sector.surge{opacity:.4}
+.sector.flash{outline:3px solid var(--amb)}
+.sector .btn{margin-top:8px;min-height:48px;font-size:12px}
+
+/* ---------- GATE ---------- */
+.gate{margin:8px}
+.gate .gname{font-size:15px;font-weight:700;letter-spacing:.12em}
+.gate .gstat{font-size:22px;font-weight:700;letter-spacing:.2em;margin:8px 0}
+.gate .gstat.sealed{color:var(--grn)}
+.gate .gstat.cycling{color:var(--amb);animation:blink .5s steps(1) infinite}
+.gate .gstat.open{color:var(--amb)}
+.gate .gbar{height:10px;background:#0a1a0a;border:1px solid #1a4a1a;margin:6px 0}
+.gate .gbar i{display:block;height:100%;width:0;background:var(--amb);transition:width .2s}
+.gate .denied{color:var(--red);font-size:12px;margin-top:6px;font-weight:700}
+.gate .bypassline{color:var(--red);font-size:11px;font-weight:700;letter-spacing:.12em;margin-top:6px}
+
+/* ---------- SURV ---------- */
+#feedgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:8px}
+.feed{position:relative;border:2px solid #1a4a1a;border-radius:4px;overflow:hidden;background:#000}
+.feed canvas{width:100%;height:auto;display:block;image-rendering:pixelated}
+.feed .flabel{position:absolute;top:4px;left:6px;font-size:10px;letter-spacing:.15em;
+  color:var(--grn);text-shadow:0 0 4px #000;pointer-events:none}
+.feed:active{border-color:var(--amb)}
+#feedoverlay{position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:1500;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:20px}
+#bigfeed{width:100%;max-width:360px;border:2px solid #1a4a1a;image-rendering:pixelated}
+
+/* ---------- MAP ---------- */
+#parkmap{width:100%;height:auto;display:block;touch-action:manipulation}
+.mapzone{cursor:pointer}
+.mapzone polygon{fill:#0a1f0a;stroke:#2a6a2a;stroke-width:2}
+.mapzone.tapped polygon{stroke:var(--amb);stroke-width:4}
+.mapzone text{fill:var(--dim);font-size:13px;font-family:monospace;letter-spacing:.1em}
+.mapzone .zlabel{fill:var(--grn);font-weight:700}
+.rdot{fill:var(--grn)}
+.rdlabel{fill:var(--dim);font-size:10px;font-family:monospace}
+.dblip{fill:var(--red)}
+
+/* ---------- SYS terminal ---------- */
+#termout{height:56vh;font-size:13px;white-space:pre-wrap}
+#termout .err{color:var(--red)}
+#termout .ok{color:#9dffb8}
+#termout .amb{color:var(--amb)}
+#termin{display:flex;align-items:center;gap:6px;padding:8px}
+#termin .prompt{color:var(--amb);font-weight:700;font-size:16px}
+#cmdin{flex:1;background:#020402;border:2px solid #1a4a1a;color:var(--grn);
+  font-family:inherit;font-size:16px;padding:12px;border-radius:4px;outline:none}
+#cmdin:focus{border-color:var(--grn)}
+
+/* ---------- minigame overlay ---------- */
+#minigame{position:fixed;inset:0;background:rgba(0,0,0,.94);z-index:1600;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:24px}
+#mgtimer{width:80%;height:14px;border:2px solid var(--grn);border-radius:4px}
+#mgtimer i{display:block;height:100%;background:var(--grn);width:100%}
+#mgnode{position:absolute;left:80px;top:80px;width:120px;height:120px;border-radius:50%;border:4px solid var(--amb);
+  background:radial-gradient(circle,#3a2a00,#120c00);touch-action:manipulation;
+  animation:nodepulse .9s ease-in-out infinite}
+#mgfield{position:relative;width:280px;height:280px;touch-action:manipulation}
+@keyframes nodepulse{0%,100%{transform:scale(1)}50%{transform:scale(1.18)}}
+#mgcount{font-size:30px;font-weight:700;letter-spacing:.2em}
+
+/* ---------- idle veil ---------- */
+#idleveil{position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:1900;
+  display:flex;align-items:center;justify-content:center;font-size:15px;
+  letter-spacing:.25em;text-align:center;padding:20px}
+</style>
+</head>
+<body>
+<!-- BOOT -->
+<div id="boot" class="phos">
+  <div id="bootlog"></div><span id="bootcursor">▮</span>
+  <div id="boottap">— TAP TO SKIP —</div>
+</div>
+
+<!-- APP -->
+<div id="app" class="hidden">
+  <header id="statusbar">
+    <span id="clock" class="phos">00:00:00</span>
+    <span class="grow dim small">CINDER RIDGE SANCTUARY</span>
+    <span class="small">FENCE <b id="integ" class="phos">100</b>%</span>
+    <span class="small">ALRT <b id="alertcount" class="phos">0</b></span>
+    <span id="ovrind" class="small phos-red hidden"></span>
+    <button id="mutebtn" class="btn">SND:ON</button>
+  </header>
+
+  <div id="alertbanner" class="hidden">
+    <div class="msg phos-red" id="alertmsg">⚠ ALERT</div>
+    <div class="btn-row">
+      <button id="ackbtn" class="btn warn">Acknowledge</button>
+      <button id="dispatchbtn" class="btn">Dispatch Ranger</button>
+    </div>
+  </div>
+  <div id="alertbadge" class="hidden"></div>
+
+  <main id="panels">
+    <!-- COMMS -->
+    <section id="tab-comms" class="panel-tab">
+      <div class="panel">
+        <h2 class="sect phos">&gt; RADIO NET — CH 121.5</h2>
+        <div id="radiolog" class="display"></div>
+        <div id="txrow">
+          <span id="txind">◌ RX</span>
+          <div id="meter"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+        </div>
+        <button id="ptt" class="btn danger">◉ PUSH-TO-TALK</button>
+        <div class="small dim" style="margin-top:6px;text-align:center">HOLD TO TRANSMIT · RELEASE TO SEND</div>
+      </div>
+    </section>
+    <!-- FENCE -->
+    <section id="tab-fence" class="panel-tab">
+      <h2 class="sect phos" style="margin-left:8px">&gt; PERIMETER FENCE GRID</h2>
+      <div id="fencesummary" class="dim">GRID NOMINAL</div>
+      <div id="fencegrid"></div>
+    </section>
+    <!-- GATE -->
+    <section id="tab-gate" class="panel-tab">
+      <h2 class="sect phos" style="margin-left:8px">&gt; GATE CONTROL</h2>
+      <div class="small dim" style="margin:0 8px">INTERLOCK: GATES WILL NOT CYCLE WHILE THEIR SECTOR FENCE IS ENERGIZED.</div>
+      <div id="gatelist"></div>
+    </section>
+    <!-- SURV -->
+    <section id="tab-surv" class="panel-tab">
+      <div class="panel">
+        <h2 class="sect phos">&gt; SURVEILLANCE WALL</h2>
+        <button id="nvtoggle" class="btn" style="min-height:48px;margin-bottom:8px">Night Vision: OFF</button>
+        <div class="small dim" style="margin-bottom:6px">TAP A FEED TO ENLARGE</div>
+      </div>
+      <div id="feedgrid"></div>
+    </section>
+    <!-- MAP -->
+    <section id="tab-map" class="panel-tab">
+      <div class="panel">
+        <h2 class="sect phos">&gt; PARK MAP — CINDER RIDGE</h2>
+        <div class="small dim" style="margin-bottom:6px">TAP A SECTOR TO JUMP TO ITS FENCE CONTROL</div>
+        <svg id="parkmap" viewBox="0 0 360 400" aria-label="Park map">
+          <g id="zones"></g>
+          <g id="dblips"></g>
+          <g id="rdots"></g>
+        </svg>
+        <div id="maplegend" class="small dim" style="margin-top:6px"></div>
+      </div>
+    </section>
+    <!-- SYS -->
+    <section id="tab-sys" class="panel-tab">
+      <div class="panel">
+        <h2 class="sect phos">&gt; SYSTEM TERMINAL</h2>
+        <div id="termout" class="display"></div>
+        <div id="termin"><span class="prompt">&gt;</span><input id="cmdin" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="type 'help'"></div>
+      </div>
+    </section>
+  </main>
+
+  <nav id="tabnav">
+    <button class="btn on" data-tab="comms">COMMS</button>
+    <button class="btn" data-tab="fence">FENCE</button>
+    <button class="btn" data-tab="gate">GATE</button>
+    <button class="btn" data-tab="surv">SURV</button>
+    <button class="btn" data-tab="map">MAP</button>
+    <button class="btn" data-tab="sys">SYS</button>
+  </nav>
+</div>
+
+<!-- feed enlarge overlay -->
+<div id="feedoverlay" class="hidden">
+  <div class="phos" id="bigname" style="letter-spacing:.2em">[ CAM 01 ]</div>
+  <canvas id="bigfeed" width="320" height="240"></canvas>
+  <button id="bigclose" class="btn" style="width:200px">Close</button>
+</div>
+
+<!-- manual override minigame -->
+<div id="minigame" class="hidden">
+  <div class="phos-amber" style="font-size:16px;font-weight:700;letter-spacing:.15em">MANUAL OVERRIDE</div>
+  <div class="small dim">TAP THE PULSING NODE 5× IN 8 SECONDS — IT FIGHTS BACK</div>
+  <div id="mgtimer"><i></i></div>
+  <div id="mgfield"><div id="mgnode"></div></div>
+  <div id="mgcount" class="phos">0 / 5</div>
+  <button id="mgcancel" class="btn warn" style="width:200px">Abort</button>
+</div>
+
+<!-- idle standby veil -->
+<div id="idleveil" class="hidden phos">STANDBY — TAP TO RESUME</div>
+
+<!-- CRT overlays -->
+<div class="crt-flicker"></div>
+<div class="vignette"></div>
+<div class="scanlines"></div>
+
+<script>
+"use strict";
+/* =====================================================================
+   RANGER TERMINAL v2.3.1 — CINDER RIDGE SANCTUARY
+   Single-file 90s movie-prop park terminal. Zero external requests.
+   ===================================================================== */
+
+/* ================= AUDIO (100% procedural, zero files) ============ */
+let AC=null, master=null, _noise=null, ambientNodes=null, nvNodes=null, klaxonNodes=null;
+let muted=false;
+
+function ac(){
+  if(!AC){
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    AC = new Ctx();
+    master = AC.createGain();
+    master.gain.value = muted ? 0 : 0.5;
+    master.connect(AC.destination);
+  }
+  return AC;
+}
+// iOS: resume on EVERY tap — cheap, and the context can re-suspend.
+function resumeAudio(){
+  try{ const c = ac(); if(c.state === 'suspended') c.resume(); }catch(e){}
+}
+window.addEventListener('pointerdown', resumeAudio);
+document.addEventListener('gesturestart', e => e.preventDefault());
+document.addEventListener('dblclick', e => e.preventDefault());
+document.addEventListener('visibilitychange', () => {
+  if(!AC) return;
+  if(document.hidden){ try{AC.suspend();}catch(e){} }
+  else if(!muted){ try{AC.resume();}catch(e){} }
+});
+// One shared noise buffer for everything.
+function noiseBuf(){
+  if(_noise) return _noise;
+  const c = ac(), b = c.createBuffer(1, c.sampleRate * 2, c.sampleRate), d = b.getChannelData(0);
+  for(let i=0;i<d.length;i++) d[i] = Math.random()*2-1;
+  _noise = b; return b;
+}
+function blip(freq, dur, type, vol){
+  freq=freq||880; dur=dur||0.06; type=type||'square'; vol=vol||0.12;
+  if(muted) return;
+  try{
+    const c=ac(), t=c.currentTime, o=c.createOscillator(), g=c.createGain();
+    o.type=type; o.frequency.value=freq;
+    g.gain.setValueAtTime(vol,t); g.gain.exponentialRampToValueAtTime(0.001,t+dur);
+    o.connect(g); g.connect(master); o.start(t); o.stop(t+dur+0.02);
+  }catch(e){}
+}
+function uiBlip(f,t){ blip(f||740, 0.055, t||'triangle', 0.10); } // per-family pitch, triangle by default (less fatiguing than 880 square)
+function errBuzz(){ blip(140,0.22,'sawtooth',0.18); setTimeout(()=>blip(110,0.22,'sawtooth',0.18),120); }
+// Radio squelch burst + roger beep.
+function squelch(){
+  if(muted) return;
+  try{
+    const c=ac(), t=c.currentTime, s=c.createBufferSource(); s.buffer=noiseBuf();
+    const f=c.createBiquadFilter(); f.type='bandpass'; f.frequency.value=1800; f.Q.value=0.8;
+    const g=c.createGain(); g.gain.setValueAtTime(0.22,t);
+    g.gain.exponentialRampToValueAtTime(0.001,t+0.28);
+    s.connect(f); f.connect(g); g.connect(master); s.start(t); s.stop(t+0.3);
+    setTimeout(()=>blip(1200,0.12,'sine',0.18),300);
+  }catch(e){}
+}
+function roger(){ blip(1200,0.12,'sine',0.18); }
+// Klaxon (two-tone siren via LFO). Triangle + sine LFO: menace, not mosquito.
+function klaxonStart(){
+  if(muted || klaxonNodes) return;
+  try{
+    const c=ac(), t=c.currentTime;
+    const o=c.createOscillator(); o.type='triangle'; o.frequency.value=440;
+    const lfo=c.createOscillator(); lfo.type='sine'; lfo.frequency.value=0.9;
+    const lg=c.createGain(); lg.gain.value=180;
+    lfo.connect(lg); lg.connect(o.frequency);
+    const g=c.createGain(); g.gain.setValueAtTime(0.0001,t);
+    g.gain.exponentialRampToValueAtTime(0.14,t+0.3);
+    o.connect(g); g.connect(master); o.start(t); lfo.start(t);
+    klaxonNodes={o,lfo,g};
+  }catch(e){}
+}
+function klaxonStop(){
+  if(!klaxonNodes) return;
+  try{
+    const c=ac(), t=c.currentTime, n=klaxonNodes;
+    n.g.gain.cancelScheduledValues(t); n.g.gain.setValueAtTime(n.g.gain.value,t);
+    n.g.gain.exponentialRampToValueAtTime(0.0001,t+0.4);
+    setTimeout(()=>{ try{n.o.stop();n.lfo.stop();n.o.disconnect();n.lfo.disconnect();n.g.disconnect();}catch(e){} },450);
+  }catch(e){}
+  klaxonNodes=null;
+}
+// Heavy gate clunk + hydraulic servo grind.
+function gateClunk(){
+  if(muted) return;
+  try{
+    const c=ac(), t=c.currentTime;
+    const o=c.createOscillator(); o.type='sine';
+    o.frequency.setValueAtTime(90,t); o.frequency.exponentialRampToValueAtTime(32,t+0.25);
+    const g=c.createGain(); g.gain.setValueAtTime(0.5,t);
+    g.gain.exponentialRampToValueAtTime(0.001,t+0.4);
+    o.connect(g); g.connect(master); o.start(t); o.stop(t+0.45);
+    // mid-band impact transient so the clunk lands on phone speakers (200-350Hz)
+    const m=c.createOscillator(); m.type='triangle'; m.frequency.value=260;
+    const mg=c.createGain(); mg.gain.setValueAtTime(0.28,t);
+    mg.gain.exponentialRampToValueAtTime(0.001,t+0.12);
+    m.connect(mg); mg.connect(master); m.start(t); m.stop(t+0.15);
+    const ns=c.createBufferSource(); ns.buffer=noiseBuf();
+    const nf=c.createBiquadFilter(); nf.type='bandpass'; nf.frequency.value=1200; nf.Q.value=1;
+    const ng=c.createGain(); ng.gain.setValueAtTime(0.20,t);
+    ng.gain.exponentialRampToValueAtTime(0.001,t+0.09);
+    ns.connect(nf); nf.connect(ng); ng.connect(master); ns.start(t); ns.stop(t+0.12);
+    const s=c.createBufferSource(); s.buffer=noiseBuf();
+    const f=c.createBiquadFilter(); f.type='lowpass'; f.frequency.value=300;
+    const g2=c.createGain(); g2.gain.setValueAtTime(0.0001,t+0.15);
+    g2.gain.exponentialRampToValueAtTime(0.2,t+0.3);
+    g2.gain.exponentialRampToValueAtTime(0.001,t+1.1);
+    s.connect(f); f.connect(g2); g2.connect(master); s.start(t+0.15); s.stop(t+1.2);
+  }catch(e){}
+}
+// CRT power-on hum/zap.
+function crtOn(){
+  if(muted) return;
+  try{
+    const c=ac(), t=c.currentTime;
+    const o=c.createOscillator(); o.type='sawtooth';
+    o.frequency.setValueAtTime(50,t); o.frequency.exponentialRampToValueAtTime(400,t+0.5);
+    const f=c.createBiquadFilter(); f.type='lowpass'; f.frequency.value=800;
+    const g=c.createGain(); g.gain.setValueAtTime(0.0001,t);
+    g.gain.exponentialRampToValueAtTime(0.15,t+0.1);
+    g.gain.exponentialRampToValueAtTime(0.001,t+0.6);
+    o.connect(f); f.connect(g); g.connect(master); o.start(t); o.stop(t+0.65);
+    blip(2000,0.03,'square',0.08);
+  }catch(e){}
+}
+// Ambient jungle hum — one looped noise buffer + slow LFO. Started after boot.
+function ambientStart(){
+  if(ambientNodes || muted) return;
+  try{
+    const c=ac();
+    const s=c.createBufferSource(); s.buffer=noiseBuf(); s.loop=true;
+    const f=c.createBiquadFilter(); f.type='lowpass'; f.frequency.value=400; f.Q.value=0.5;
+    const lfo=c.createOscillator(); lfo.frequency.value=0.07;
+    const lg=c.createGain(); lg.gain.value=150; lfo.connect(lg); lg.connect(f.frequency);
+    const g=c.createGain(); g.gain.value=0.06;
+    s.connect(f); f.connect(g); g.connect(master); s.start(); lfo.start();
+    ambientNodes={s,lfo,g};
+  }catch(e){}
+}
+// Distant rumble — sparse, very quiet.
+function distantRumble(){
+  if(muted || !ambientNodes) return;
+  try{
+    const c=ac(), t=c.currentTime, s=c.createBufferSource(); s.buffer=noiseBuf();
+    const f=c.createBiquadFilter(); f.type='lowpass'; f.frequency.value=90;
+    const g=c.createGain(); g.gain.setValueAtTime(0.0001,t);
+    g.gain.exponentialRampToValueAtTime(0.08,t+1.2);
+    g.gain.exponentialRampToValueAtTime(0.0001,t+3);
+    s.connect(f); f.connect(g); g.connect(master); s.start(t); s.stop(t+3.2);
+    // audible harmonic layer under the sub (150-300Hz): the part a phone can play
+    const o2=c.createOscillator(); o2.type='sine'; o2.frequency.value=170;
+    const g2=c.createGain(); g2.gain.setValueAtTime(0.0001,t);
+    g2.gain.exponentialRampToValueAtTime(0.05,t+1.2);
+    g2.gain.exponentialRampToValueAtTime(0.0001,t+3);
+    o2.connect(g2); g2.connect(master); o2.start(t); o2.stop(t+3.2);
+  }catch(e){}
+}
+// Sparse insect chirps — the audible jungle character layer (2-4kHz lives on phones).
+function insectChirp(){
+  if(muted || !ambientNodes) return;
+  try{
+    const c=ac(), t0=c.currentTime+0.05;
+    const n=3+((Math.random()*3)|0);
+    for(let i=0;i<n;i++){
+      const t=t0+i*0.09;
+      const o=c.createOscillator(); o.type='sine';
+      o.frequency.value=2800+Math.random()*1400;
+      const g=c.createGain();
+      g.gain.setValueAtTime(0.0001,t);
+      g.gain.exponentialRampToValueAtTime(0.05,t+0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001,t+0.07);
+      o.connect(g); g.connect(master); o.start(t); o.stop(t+0.1);
+    }
+  }catch(e){}
+}
+// Night-vision static — quiet highpass noise while NV is on.
+function nvStaticStart(){
+  if(nvNodes || muted) return;
+  try{
+    const c=ac();
+    const s=c.createBufferSource(); s.buffer=noiseBuf(); s.loop=true;
+    const f=c.createBiquadFilter(); f.type='highpass'; f.frequency.value=3000;
+    const g=c.createGain(); g.gain.value=0.018;
+    s.connect(f); f.connect(g); g.connect(master); s.start();
+    nvNodes={s,g};
+  }catch(e){}
+}
+function nvStaticStop(){
+  if(!nvNodes) return;
+  try{ nvNodes.s.stop(); nvNodes.s.disconnect(); nvNodes.g.disconnect(); }catch(e){}
+  nvNodes=null;
+}
+// Master mute. Muting only drops master gain — looping nodes keep running
+// silently, so unmute restores them cleanly (klaxon included).
+function setMuted(m){
+  muted=m;
+  const b=document.getElementById('mutebtn');
+  if(b) b.textContent = m ? 'SND:OFF' : 'SND:ON';
+  try{
+    if(AC && master){
+      const t=AC.currentTime, g=master.gain;
+      g.cancelScheduledValues(t); g.setValueAtTime(g.value,t);
+      g.linearRampToValueAtTime(m?0:0.5, t+0.05); // 50ms ramp: no clicks
+    }
+    if(m){ nvStaticStop(); }
+    else { ambientStart(); if(nightVision) nvStaticStart();
+      if(activeAlert && !klaxonNodes){ klaxonStart(); setTimeout(klaxonStop,5000); } }
+  }catch(e){}
+}
+
+/* ================= STATE ================= */
+const SECTOR_NAMES=['S1','S2','S3','S4','S5','S6'];
+const sectors = SECTOR_NAMES.map(n => ({ id:n, energized:true, kv:10, target:10, lowAlert:false }));
+const gates = [
+  { name:'NORTH GATE',      sector:0, state:'SEALED' },
+  { name:'EAST SERVICE',    sector:1, state:'SEALED' },
+  { name:'PADDOCK 7 GATE',  sector:3, state:'SEALED' },
+  { name:'WEST MAINT.',     sector:5, state:'SEALED' },
+];
+const RANGERS=['ASHFALL','LONGSHOT','BRAMBLE','HALIDE','GATEKEEPER','DUSKWATCH'];
+let alertTotal=0, nightVision=false, bootDone=false, booted=false;
+let activeAlert=null, alertQueue=[], mgLockoutUntil=0;
+let overrideUntil=0;   // MANUAL OVERRIDE payoff: interlock bypass window
+let voltDipUntil=0;    // urgent-chatter voltage dip expiry (S2)
+
+function $(id){ return document.getElementById(id); }
+function stamp(){
+  const d=new Date(), p=n=>String(n).padStart(2,'0');
+  return p(d.getHours())+':'+p(d.getMinutes())+':'+p(d.getSeconds());
+}
+function anyInput(){
+  idleLast=Date.now();
+  const v=$('idleveil');
+  if(!v.classList.contains('hidden')){
+    v.classList.add('hidden');
+    // resume cue: an unacknowledged alert replays its burst once on wake
+    if(activeAlert && !klaxonNodes && !muted){ klaxonStart(); setTimeout(klaxonStop,5000); }
+  }
+}
+window.addEventListener('pointerdown', anyInput, {passive:true});
+
+/* ================= STATUS BAR ================= */
+setInterval(()=>{
+  $('clock').textContent = stamp();
+  let sum=0; for(const s of sectors) sum+=s.kv;
+  const pct=Math.round(sum/60*100);
+  $('integ').textContent=pct;
+  $('integ').className = pct<60 ? 'phos-red' : (pct<90 ? 'phos-amber' : 'phos');
+  $('alertcount').textContent=alertTotal;
+  // override countdown — and the moment the bypass window closes
+  const ov=$('ovrind');
+  if(overrideUntil>Date.now()){
+    const s=Math.ceil((overrideUntil-Date.now())/1000);
+    ov.textContent='OVR '+Math.floor(s/60)+':'+String(s%60).padStart(2,'0');
+    ov.classList.remove('hidden');
+  } else {
+    if(overrideUntil){
+      overrideUntil=0; updateGateBypassUI();
+      radioSys('SYS: OVERRIDE EXPIRED — INTERLOCKS RESTORED.');
+    }
+    ov.classList.add('hidden');
+  }
+},1000);
+
+/* ================= BOOT SEQUENCE ================= */
+const bootLines=[
+  'RANGER TERMINAL OS v2.3.1',
+  '(c) 1993 MERIDIAN DYNAMICS — FIELD UNIT 07',
+  '',
+  'MEM CHECK ............ 640K OK',
+  'PERIMETER GRID ....... ONLINE',
+  'PADDOCK SENSORS ...... 12/12 OK',
+  'UPLINK ............... OK',
+  'CINDER RIDGE SANCTUARY — PERIMETER CONTROL',
+];
+let bootSkipped=false;
+function finishBoot(){
+  if(bootDone) return; bootDone=true;
+  $('boot').classList.add('hidden');
+  $('app').classList.remove('hidden');
+  ambientStart();
+  startChatter(); scheduleAlerts();
+  radioSys('NET ONLINE — ALL STATIONS REPORT.');
+  setTimeout(()=>{ radioMsg('GATEKEEPER','North gate sealed, all quiet on the ridge.'); },1500);
+  setTimeout(()=>{ radioMsg('ASHFALL','Copy. Perimeter sweep at 0300. Keep eyes on the treeline.'); },5500);
+  setTimeout(()=>{ radioMsg('BRAMBLE','Ashfall, Bramble — movement in the ferns, sector 4. Probably just a grazer.'); },10000);
+}
+function skipBoot(){ // tap-to-skip, attached immediately (not only after load)
+  if(bootDone || !booted) return;
+  $('bootlog').textContent = bootLines.join('\n')+'\n\n> ACCESS GRANTED\n';
+  finishBoot();
+}
+$('boot').addEventListener('pointerdown', skipBoot);
+function runBoot(){
+  const log=$('bootlog'); let i=0;
+  crtOn();
+  function next(){
+    if(bootDone) return;
+    if(i<bootLines.length){
+      log.textContent += bootLines[i] + '\n';
+      blip(660,0.03,'square',0.05);
+      i++;
+      setTimeout(next, i===3?450 : 120+Math.random()*180);
+    } else {
+      // sensor progress bar beat
+      let p=0;
+      const iv=setInterval(()=>{
+        if(bootDone){ clearInterval(iv); return; }
+        p+=8+Math.floor(Math.random()*10);
+        if(p>=100){ p=100; clearInterval(iv);
+          log.textContent += 'SENSOR SWEEP ....... ['+'█'.repeat(20)+'] 100%\n';
+          setTimeout(()=>{
+            if(bootDone) return;
+            log.textContent += '\n> ACCESS GRANTED\n';
+            blip(520,0.12,'square',0.15); setTimeout(()=>blip(780,0.15,'square',0.15),140);
+            setTimeout(finishBoot, 900); // the payoff beat
+          },200);
+        } else {
+          const filled=Math.floor(p/100*20);
+          const bar='SENSOR SWEEP ....... ['+'█'.repeat(filled)+'░'.repeat(20-filled)+'] '+p+'%';
+          const lines=log.textContent.split('\n');
+          lines[lines.length-1]=bar; // keep trailing empty line
+          log.textContent=lines.join('\n');
+        }
+      },130);
+    }
+  }
+  setTimeout(next, 600);
+}
+if(document.readyState==='complete'||document.readyState==='interactive'){ booted=true; runBoot(); }
+else window.addEventListener('load', ()=>{ booted=true; runBoot(); });
+
+/* ================= TABS ================= */
+document.querySelectorAll('#tabnav .btn').forEach(b=>{
+  b.addEventListener('click', ()=>{
+    uiBlip(660);
+    document.querySelectorAll('#tabnav .btn').forEach(x=>x.classList.remove('on'));
+    b.classList.add('on');
+    document.querySelectorAll('.panel-tab').forEach(p=>p.classList.remove('active'));
+    const tab=b.dataset.tab;
+    $('tab-'+tab).classList.add('active');
+    // NOTE: no autofocus on tab switch — the iOS keyboard opens only on an
+    // explicit tap of the input, and visualViewport padding keeps it visible.
+  });
+});
+function showTab(name){
+  const b=document.querySelector('#tabnav .btn[data-tab="'+name+'"]');
+  if(b) b.click();
+}
+
+/* ================= COMMS ================= */
+const radiolog=$('radiolog');
+function logLine(cls, html){
+  const d=document.createElement('div'); d.className=cls; d.innerHTML=html;
+  radiolog.appendChild(d);
+  while(radiolog.children.length>60) radiolog.removeChild(radiolog.firstChild);
+  radiolog.scrollTop=radiolog.scrollHeight;
+}
+function radioMsg(from, text, urgent, action){
+  squelch();
+  logLine(urgent?'urgent':'rx', '<span class="dim">['+stamp()+']</span> <b>'+from+':</b> '+text);
+  // urgent chatter: red text + squelch only — NEVER the siren (klaxon discipline).
+  // Lines that claim park state now touch real state instead of lying.
+  if(urgent){
+    if(action==='voltdip') wireVoltageDip();
+    else if(action==='contact') spawnBlipsInSector(4,1);
+  }
+}
+function radioSys(text){ logLine('sys','<span class="dim">['+stamp()+']</span> * '+text); }
+function radioTx(text){ logLine('txline','<span class="dim">['+stamp()+']</span> <b>YOU:</b> '+text); }
+
+const chatterPool=[
+  ['LONGSHOT','North ridge clear. Wind is picking up.'],
+  ['DUSKWATCH','Perimeter check, sector 6 — fence holding.'],
+  ['HALIDE','CAM 02 has static again. Kicking the relay.'],
+  ['BRAMBLE','Fresh tracks by the creek. Logging them.'],
+  ['GATEKEEPER','East service cycled for the supply truck. Sealed again.'],
+  ['ASHFALL','All stations — feeding time in twenty minutes.'],
+  ['DUSKWATCH','Motion sensor tripped, sector 2. Going to look.'],
+  ['LONGSHOT','Ashfall, Longshot. Ridge is quiet. Too quiet.'],
+  ['BRAMBLE','The big grazer is back at the fence line. Just looking at me.'],
+  ['HALIDE','Night vision test on CAM 04 — green and mean.'],
+  ['GATEKEEPER','Reminder: do NOT prop the east service gate. Again.'],
+  ['ASHFALL','Bramble, copy your last. Keep your distance.'],
+];
+const urgentPool=[
+  ['DUSKWATCH','URGENT — fence voltage dipping in sector 2!','voltdip'],
+  ['BRAMBLE','URGENT — large contact moving fast toward sector 5!','contact'],
+];
+// urgent "voltage dip" chatter briefly sags S2 for real (quiet: no banner, no siren)
+function wireVoltageDip(){
+  const s=sectors[1];
+  if(!s.energized || s.lowAlert) return; // never fight a real alert's sag
+  s.lowAlert=true; updateFenceUI();
+  radioSys('<span class="phos-amber">S2 VOLTAGE TWITCHY ON THE SCOPE — WATCHING IT.</span>');
+  voltDipUntil=Date.now()+20000; // cleared by the map interval, no extra timer
+}
+let chatterStarted=false;
+function startChatter(){
+  if(chatterStarted) return; chatterStarted=true;
+  (function loop(first){
+    setTimeout(()=>{
+      const urgent=Math.random()<0.12;
+      const pool=urgent?urgentPool:chatterPool;
+      const m=pool[Math.floor(Math.random()*pool.length)];
+      radioMsg(m[0], m[1], urgent, m[2]);
+      loop(false);
+    }, first ? 35000+Math.random()*20000 : 20000+Math.random()*25000); // first tick no earlier than 35s
+  })(true);
+}
+// --- push-to-talk ---
+const ptt=$('ptt'), txind=$('txind'), meterBars=document.querySelectorAll('#meter i');
+let txTimer=null, txOn=false;
+const opLines=[
+  'Terminal to all stations — radio check, over.',
+  'Copy your last. Terminal standing by.',
+  'All stations, keep this channel clear.',
+  'Terminal here — status check on the perimeter.',
+  'Copy. Eyes open out there.',
+];
+function startTX(){
+  if(txOn) return; txOn=true;
+  resumeAudio(); squelch();
+  if(navigator.vibrate) try{navigator.vibrate(15);}catch(e){}
+  ptt.classList.add('pressed'); txind.textContent='◉ TX'; txind.classList.add('on');
+  let t=0;
+  txTimer=setInterval(()=>{
+    t++;
+    meterBars.forEach((b,i)=>{
+      const v=Math.sin(t*0.9+i*1.7)*0.5+0.5+Math.random()*0.3;
+      b.classList.toggle('hot', v>0.45 && v<0.8);
+      b.classList.toggle('hot2', v>=0.8);
+    });
+  },100);
+}
+function stopTX(){
+  if(!txOn) return; txOn=false;
+  clearInterval(txTimer);
+  ptt.classList.remove('pressed'); txind.textContent='◌ RX'; txind.classList.remove('on');
+  meterBars.forEach(b=>b.classList.remove('hot','hot2'));
+  roger();
+  radioTx(opLines[Math.floor(Math.random()*opLines.length)]);
+  // sometimes a ranger answers
+  if(Math.random()<0.45){
+    setTimeout(()=>{
+      const r=RANGERS[1+Math.floor(Math.random()*(RANGERS.length-1))];
+      const replies=['Copy that, terminal.','Loud and clear.','10-4, standing by.','Copy — all quiet here.'];
+      radioMsg(r, replies[Math.floor(Math.random()*replies.length)]);
+    }, 1800+Math.random()*2500);
+  }
+}
+ptt.addEventListener('pointerdown', e=>{ e.preventDefault(); startTX(); });
+window.addEventListener('pointerup', stopTX);
+window.addEventListener('pointercancel', stopTX);
+
+/* ================= FENCE GRID ================= */
+const fencegrid=$('fencegrid');
+function buildFence(){
+  fencegrid.innerHTML='';
+  sectors.forEach((s,i)=>{
+    const d=document.createElement('div'); d.className='sector on'; d.id='sector-'+i;
+    d.innerHTML='<div class="small dim" style="letter-spacing:.2em">SECTOR '+s.id+'</div>'
+      +'<div class="kv">10.0</div>'
+      +'<div class="st small">ENERGIZED</div>'
+      +'<button class="btn warn">DE-ENERGIZE</button>';
+    d.querySelector('button').addEventListener('click', e=>{ e.stopPropagation(); toggleSector(i); });
+    fencegrid.appendChild(d);
+  });
+  updateFenceUI();
+}
+function toggleSector(i){
+  const s=sectors[i], cell=$('sector-'+i);
+  uiBlip(520);
+  s.energized=!s.energized;
+  s.target=s.energized?10:0;
+  s.lowAlert=false;
+  cell.classList.add('surge');
+  setTimeout(()=>cell.classList.remove('surge'),220);
+  if(s.energized){
+    blip(520,0.1,'square',0.15); setTimeout(()=>blip(780,0.14,'square',0.15),110);
+    radioSys('SECTOR '+s.id+' FENCE RE-ENERGIZED.');
+  } else {
+    // klaxon-lite warning — only stop a klaxon this call actually started
+    if(!klaxonNodes){ klaxonStart(); setTimeout(klaxonStop,900); }
+    errBuzz();
+    radioSys('<span class="phos-red">WARNING — SECTOR '+s.id+' FENCE DE-ENERGIZED.</span>');
+    bumpAlerts('FENCE DOWN — SECTOR '+s.id, true);
+  }
+  updateFenceUI();
+}
+// voltage ramp + micro-fluctuations, 8fps. State always advances; DOM writes
+// are gated on the FENCE tab being visible.
+setInterval(()=>{
+  if(!bootDone) return;
+  sectors.forEach((s)=>{
+    const tgt=s.lowAlert?2.5:s.target;
+    const diff=tgt-s.kv;
+    s.kv += diff*0.12;
+    if(Math.abs(diff)<0.05) s.kv=tgt;
+  });
+  if(!$('tab-fence').classList.contains('active')) return;
+  sectors.forEach((s,i)=>{
+    const disp=s.energized&&!s.lowAlert ? s.kv+(Math.random()*0.5-0.25) : s.kv;
+    const cell=$('sector-'+i); if(!cell) return;
+    cell.querySelector('.kv').textContent=Math.max(0,disp).toFixed(1);
+  });
+  updateFenceSummary();
+},120);
+function updateFenceUI(){
+  sectors.forEach((s,i)=>{
+    const cell=$('sector-'+i); if(!cell) return;
+    cell.classList.toggle('on', s.energized && !s.lowAlert);
+    cell.classList.toggle('off', !s.energized);
+    cell.classList.toggle('warn', s.lowAlert);
+    cell.querySelector('.st').textContent = !s.energized?'FENCE DOWN':(s.lowAlert?'VOLTAGE LOW':'ENERGIZED');
+    cell.querySelector('button').textContent = s.energized?'DE-ENERGIZE':'ENERGIZE';
+    cell.querySelector('button').className = 'btn '+(s.energized?'warn':'');
+  });
+  updateFenceSummary();
+}
+let _lastSummary='';
+function updateFenceSummary(){
+  const down=sectors.filter(s=>!s.energized).length;
+  const low=sectors.filter(s=>s.lowAlert).length;
+  let h;
+  if(down>0){ h='<span class="phos-red">⚠ '+down+' SECTOR'+(down>1?'S':'')+' DE-ENERGIZED</span>'; }
+  else if(low>0){ h='<span class="phos-amber">⚠ '+low+' SECTOR'+(low>1?'S':'')+' VOLTAGE LOW</span>'; }
+  else { h='<span class="phos">GRID NOMINAL — ALL SECTORS ENERGIZED</span>'; }
+  if(h===_lastSummary) return; // innerHTML only on actual state change
+  _lastSummary=h;
+  $('fencesummary').innerHTML=h;
+}
+
+/* ================= GATE CONTROL ================= */
+const gatelist=$('gatelist');
+function buildGates(){
+  gatelist.innerHTML='';
+  gates.forEach((g,i)=>{
+    const d=document.createElement('div'); d.className='gate panel'; d.id='gate-'+i;
+    d.innerHTML='<div class="gname phos">'+g.name+'</div>'
+      +'<div class="small dim">SECTOR '+sectors[g.sector].id+' INTERLOCK</div>'
+      +'<div class="gstat sealed">SEALED</div>'
+      +'<div class="gbar"><i></i></div>'
+      +'<button class="btn">OPEN GATE</button>'
+      +'<div class="denied"></div>';
+    d.querySelector('button').addEventListener('click', ()=>gateToggle(i));
+    const bl=document.createElement('div');
+    bl.className='bypassline hidden'; bl.textContent='⛔ INTERLOCK BYPASSED — OVERRIDE';
+    d.appendChild(bl); bypassLines.push(bl);
+    gatelist.appendChild(d);
+  });
+}
+const bypassLines=[];
+function updateGateBypassUI(){
+  const on=overrideUntil>Date.now();
+  bypassLines.forEach(e=>e.classList.toggle('hidden',!on));
+}
+function gateToggle(i){
+  const g=gates[i]; if(g.state==='CYCLING') return;
+  const cell=$('gate-'+i), stat=cell.querySelector('.gstat'),
+        bar=cell.querySelector('.gbar i'), btn=cell.querySelector('button'),
+        denied=cell.querySelector('.denied');
+  denied.textContent='';
+  if(g.state==='SEALED'){
+    // interlock: will not open while its sector fence is energized —
+    // unless MANUAL OVERRIDE bought a 90s bypass window
+    const sec=sectors[g.sector];
+    const bypassed=overrideUntil>Date.now();
+    if(sec.energized && !bypassed){
+      errBuzz();
+      denied.textContent='⛔ DENIED — SECTOR '+sec.id+' FENCE IS ENERGIZED. DE-ENERGIZE FIRST.';
+      radioSys('GATE INTERLOCK: '+g.name+' OPEN DENIED (SECTOR '+sec.id+' ENERGIZED).');
+      return;
+    }
+    uiBlip(700);
+    g.state='CYCLING'; stat.textContent='CYCLING'; stat.className='gstat cycling';
+    btn.textContent='CYCLING…'; btn.disabled=true;
+    gateClunk();
+    if(bypassed) radioSys(g.name+' <span class="phos-red">OPENING UNDER OVERRIDE — INTERLOCK BYPASSED.</span>');
+    else radioSys(g.name+' CYCLING OPEN…');
+    let p=0;
+    const iv=setInterval(()=>{
+      p+=8+Math.random()*8; if(p>100)p=100;
+      bar.style.width=p+'%';
+      if(p>=100){
+        clearInterval(iv);
+        g.state='OPEN'; stat.textContent='OPEN'; stat.className='gstat open';
+        btn.textContent='CLOSE GATE'; btn.disabled=false;
+        gateClunk();
+        radioSys(g.name+' <span class="phos-amber">OPEN.</span>');
+      }
+    },140);
+  } else { // OPEN → close
+    uiBlip(700);
+    g.state='CYCLING'; stat.textContent='CYCLING'; stat.className='gstat cycling';
+    btn.textContent='CYCLING…'; btn.disabled=true;
+    gateClunk();
+    radioSys(g.name+' CYCLING CLOSED…');
+    let p=100;
+    const iv=setInterval(()=>{
+      p-=8+Math.random()*8; if(p<0)p=0;
+      bar.style.width=p+'%';
+      if(p<=0){
+        clearInterval(iv);
+        g.state='SEALED'; stat.textContent='SEALED'; stat.className='gstat sealed';
+        btn.textContent='OPEN GATE'; btn.disabled=false;
+        gateClunk();
+        radioSys(g.name+' <span class="phos">SEALED.</span>');
+      }
+    },140);
+  }
+}
+
+/* ================= SURVEILLANCE FEEDS ================= */
+const FW=160, FH=120;
+// pre-rendered noise tiles for cheap static
+const noiseTiles=[];
+for(let k=0;k<4;k++){
+  const t=document.createElement('canvas'); t.width=FW; t.height=FH;
+  const c=t.getContext('2d'), img=c.createImageData(FW,FH), d=img.data;
+  for(let i=0;i<d.length;i+=4){ const v=Math.random()*255|0; d[i]=d[i+1]=d[i+2]=v; d[i+3]=255; }
+  c.putImageData(img,0,0); noiseTiles.push(t);
+}
+function paintScene(sc, seed){
+  const c=sc.getContext('2d');
+  let rnd=seed;
+  const R=()=>{ rnd=(rnd*1103515245+12345)&0x7fffffff; return rnd/0x7fffffff; };
+  // sky/ground gradient
+  const g=c.createLinearGradient(0,0,0,FH);
+  g.addColorStop(0,'#0c1410'); g.addColorStop(0.62,'#0e1a0c'); g.addColorStop(0.63,'#081008'); g.addColorStop(1,'#050a05');
+  c.fillStyle=g; c.fillRect(0,0,FW*2,FH);
+  // distant ridge
+  c.fillStyle='#0a120c';
+  c.beginPath(); c.moveTo(0,70);
+  for(let x=0;x<=FW*2;x+=20) c.lineTo(x,58+R()*22);
+  c.lineTo(FW*2,80); c.lineTo(0,80); c.fill();
+  // trees: dark verticals + canopy blobs
+  for(let i=0;i<46;i++){
+    const x=R()*FW*2, h=26+R()*30, w=3+R()*5;
+    c.fillStyle='#071007'; c.fillRect(x,76-h,w,h);
+    c.fillStyle='#0b180b';
+    for(let b=0;b<4;b++){ c.beginPath(); c.arc(x+w/2+(R()*14-7),76-h+(R()*12-6),6+R()*9,0,7); c.fill(); }
+  }
+  // fence line with posts
+  c.strokeStyle='#152b15'; c.lineWidth=1;
+  c.beginPath(); c.moveTo(0,86); c.lineTo(FW*2,86); c.stroke();
+  c.beginPath(); c.moveTo(0,92); c.lineTo(FW*2,92); c.stroke();
+  for(let x=4;x<FW*2;x+=22){ c.fillStyle='#0d1f0d'; c.fillRect(x,80,2,20); }
+  // ground texture
+  c.fillStyle='#060c06';
+  for(let i=0;i<60;i++) c.fillRect(R()*FW*2,96+R()*22,2+R()*5,1);
+}
+function drawDino(c,d){
+  const x=d.x, y=FH;
+  c.fillStyle='#040704';
+  c.beginPath();
+  if(d.kind===0){ // long-neck grazer
+    const bob=Math.sin(d.x*0.05)*1.5;
+    c.ellipse(x,y*0.72,26,10,0,0,7);
+    c.moveTo(x+18,y*0.70+bob); c.quadraticCurveTo(x+36,y*0.45+bob,x+31,y*0.26+bob);
+    c.lineTo(x+37,y*0.28+bob); c.quadraticCurveTo(x+42,y*0.50+bob,x+24,y*0.68+bob);
+    c.moveTo(x-24,y*0.72); c.quadraticCurveTo(x-46,y*0.70,x-54,y*0.58);
+    c.lineTo(x-50,y*0.64); c.quadraticCurveTo(x-40,y*0.74,x-22,y*0.76);
+  } else { // biped hunter
+    const bob=Math.sin(d.x*0.08)*2;
+    c.ellipse(x,y*0.64+bob,16,11,-0.2,0,7);
+    c.moveTo(x+10,y*0.58+bob); c.quadraticCurveTo(x+20,y*0.38+bob,x+18,y*0.28+bob);
+    c.arc(x+18,y*0.28+bob,5,0,7);
+    c.moveTo(x-14,y*0.66); c.quadraticCurveTo(x-32,y*0.64,x-40,y*0.54);
+    c.lineTo(x-36,y*0.60); c.quadraticCurveTo(x-26,y*0.70,x-12,y*0.70);
+    c.fillRect(x-7,y*0.70,5,18); c.fillRect(x+3,y*0.70,5,18);
+  }
+  c.fill();
+}
+const feeds=[];
+function makeFeed(idx){
+  const label='CAM 0'+(idx+1);
+  const scene=document.createElement('canvas'); scene.width=FW*2; scene.height=FH;
+  paintScene(scene, 1234+idx*777);
+  const feed={ idx, label, scene, pan:Math.random()*FW, next:0, dino:null, glitchAt:Date.now()+15000+Math.random()*15000,
+    tile:0,
+    draw(c,W,H,t,nv){
+      if(t<this.next) return; this.next=t+80; // ~12.5fps
+      const sx=W/FW, sy=H/FH;
+      c.save(); c.scale(sx,sy);
+      this.pan=(this.pan+0.5)%FW;
+      c.drawImage(this.scene,-this.pan,0); c.drawImage(this.scene,FW-this.pan,0);
+      // dino crossing
+      if(!this.dino && Math.random()<0.006)
+        this.dino={x:-50,speed:0.7+Math.random()*0.9,kind:Math.random()<0.5?0:1};
+      if(this.dino){
+        this.dino.x+=this.dino.speed;
+        drawDino(c,this.dino);
+        if(this.dino.x>FW+50) this.dino=null;
+      }
+      // sparse grain
+      this.tile=(this.tile+1)%4;
+      c.globalAlpha=0.07; c.drawImage(noiseTiles[this.tile],0,0); c.globalAlpha=1;
+      // night vision tint
+      if(nv){ c.fillStyle='rgba(0,120,0,0.42)'; c.fillRect(0,0,FW,FH); }
+      // periodic signal glitch: slice displacement (from the pre-rendered scene —
+      // never a self-blit) + heavy static
+      if(Date.now()>this.glitchAt){
+        for(let s=0;s<6;s++){
+          const gy0=Math.random()*FH|0, gh=3+(Math.random()*8|0), gdx=(Math.random()*20-10)|0;
+          c.drawImage(this.scene, this.pan, gy0, FW, gh, gdx, gy0, FW, gh);
+        }
+        c.globalAlpha=0.35; c.drawImage(noiseTiles[(Math.random()*4)|0],0,0); c.globalAlpha=1;
+        this.glitchAt=Date.now()+18000+Math.random()*20000;
+      }
+      c.restore();
+      // HUD
+      c.fillStyle = nv ? '#7dff9a' : '#33ff66';
+      c.font='bold 11px monospace';
+      const d=new Date(), p=n=>String(n).padStart(2,'0');
+      c.fillText(this.label+'  1993-06-11 '+p(d.getHours())+':'+p(d.getMinutes())+':'+p(d.getSeconds()),6,14);
+      if(Math.floor(Date.now()/500)%2===0){ c.fillStyle='#ff4444'; c.fillText('● REC',W-52,14); }
+    }
+  };
+  feeds.push(feed);
+  return feed;
+}
+function buildFeeds(){
+  const grid=$('feedgrid'); grid.innerHTML='';
+  for(let i=0;i<4;i++){
+    const feed=makeFeed(i);
+    const wrap=document.createElement('div'); wrap.className='feed';
+    const cv=document.createElement('canvas'); cv.width=FW; cv.height=FH;
+    feed.cv=cv; feed.ctx=cv.getContext('2d');
+    wrap.appendChild(cv);
+    const lb=document.createElement('div'); lb.className='flabel'; lb.textContent='[ CAM 0'+(i+1)+' ]';
+    wrap.appendChild(lb);
+    wrap.addEventListener('click', ()=>enlargeFeed(i));
+    grid.appendChild(wrap);
+  }
+}
+let bigFeedIdx=-1;
+function enlargeFeed(i){
+  uiBlip(980,'sine'); squelch();
+  bigFeedIdx=i;
+  $('bigname').textContent='[ CAM 0'+(i+1)+' ]';
+  $('feedoverlay').classList.remove('hidden');
+}
+$('bigclose').addEventListener('click', ()=>{ uiBlip(980,'sine'); $('feedoverlay').classList.add('hidden'); bigFeedIdx=-1; });
+// one rAF loop drives all feeds, throttled per-feed
+(function feedLoop(){
+  requestAnimationFrame(feedLoop);
+  const t=performance.now();
+  for(const f of feeds){
+    if(f.ctx && $('tab-surv').classList.contains('active') && $('feedoverlay').classList.contains('hidden'))
+      f.draw(f.ctx,FW,FH,t,nightVision);
+  }
+  if(bigFeedIdx>=0){
+    const bc=$('bigfeed');
+    feeds[bigFeedIdx].draw(bc.getContext('2d'),320,240,t,nightVision);
+  }
+})();
+$('nvtoggle').addEventListener('click', function(){
+  uiBlip(520,'sine');
+  nightVision=!nightVision;
+  this.textContent='Night Vision: '+(nightVision?'ON':'OFF');
+  this.classList.toggle('warn',nightVision);
+  if(nightVision){ nvStaticStart(); radioSys('NIGHT VISION <span class="phos">ENGAGED</span> — ALL FEEDS.'); }
+  else { nvStaticStop(); radioSys('NIGHT VISION DISENGAGED.'); }
+});
+
+/* ================= PARK MAP ================= */
+const zonePolys=[
+  '40,60 120,40 150,120 80,150 30,110',      // S1
+  '150,40 250,30 270,110 170,130 150,120',   // S2
+  '270,30 340,60 330,140 270,110',           // S3
+  '30,150 120,160 110,260 40,280 20,200',    // S4
+  '120,160 230,150 240,260 110,260',         // S5
+  '230,150 330,140 320,260 240,260',          // S6
+];
+const zoneCenters=[[85,95],[205,85],[305,90],[70,210],[175,210],[280,205]];
+const rangerPaths=[
+  {name:'ASHFALL',  pts:[[85,95],[175,210],[205,85],[70,210]], i:0, speed:0.004},
+  {name:'LONGSHOT', pts:[[205,85],[305,90],[280,205],[175,210]], i:0, speed:0.003},
+  {name:'BRAMBLE',  pts:[[70,210],[175,210],[85,95],[70,210]], i:0, speed:0.005},
+  {name:'DUSKWATCH',pts:[[280,205],[305,90],[205,85],[280,205]], i:0, speed:0.0035},
+];
+const fixedDots=[
+  {name:'HALIDE', x:175, y:330},
+  {name:'GATEKEEPER', x:60, y:330},
+];
+let dinoBlips=[];
+function spawnDinoBlip(x,y,ttl,force){
+  const g=$('dblips'); if(!g) return;
+  if(dinoBlips.length>=3){
+    if(!force) return; // ambient noise yields to meaningful contacts
+    const d=dinoBlips.shift(); if(d) d.el.remove();
+  }
+  const NS='http://www.w3.org/2000/svg';
+  const c=document.createElementNS(NS,'circle');
+  c.setAttribute('cx',x); c.setAttribute('cy',y); c.setAttribute('r',6); c.setAttribute('class','dblip');
+  g.appendChild(c);
+  dinoBlips.push({el:c, born:Date.now(), ttl:ttl||8000});
+}
+function spawnBlipsInSector(i,n){
+  const c=zoneCenters[i]; if(!c) return;
+  for(let k=0;k<n;k++)
+    spawnDinoBlip(c[0]+(Math.random()*60-30), c[1]+(Math.random()*60-30), 20000, true);
+}
+function buildMap(){
+  const zones=$('zones'), NS='http://www.w3.org/2000/svg';
+  zonePolys.forEach((pts,i)=>{
+    const g=document.createElementNS(NS,'g'); g.setAttribute('class','mapzone'); g.dataset.sector=i;
+    const pg=document.createElementNS(NS,'polygon'); pg.setAttribute('points',pts);
+    const t=document.createElementNS(NS,'text');
+    t.setAttribute('x',zoneCenters[i][0]); t.setAttribute('y',zoneCenters[i][1]);
+    t.setAttribute('text-anchor','middle'); t.setAttribute('class','zlabel');
+    t.textContent='S'+(i+1);
+    const t2=document.createElementNS(NS,'text');
+    t2.setAttribute('x',zoneCenters[i][0]); t2.setAttribute('y',zoneCenters[i][1]+16);
+    t2.setAttribute('text-anchor','middle');
+    t2.textContent = sectors[i].energized ? '10.0kV' : 'OFF';
+    t2.id='mapkv-'+i;
+    g.appendChild(pg); g.appendChild(t); g.appendChild(t2);
+    g.addEventListener('click', ()=>{
+      uiBlip(980);
+      g.classList.add('tapped'); setTimeout(()=>g.classList.remove('tapped'),600);
+      radioSys('MAP → SECTOR S'+(i+1)+' FENCE CONTROL.');
+      showTab('fence');
+      const cell=$('sector-'+i);
+      cell.classList.add('flash'); cell.scrollIntoView({block:'center'});
+      setTimeout(()=>cell.classList.remove('flash'),1200);
+    });
+    zones.appendChild(g);
+  });
+  // fixed dots
+  const rd=$('rdots');
+  fixedDots.forEach(f=>{
+    const c=document.createElementNS(NS,'circle');
+    c.setAttribute('cx',f.x); c.setAttribute('cy',f.y); c.setAttribute('r',5); c.setAttribute('class','rdot');
+    const l=document.createElementNS(NS,'text');
+    l.setAttribute('x',f.x+8); l.setAttribute('y',f.y+3); l.setAttribute('class','rdlabel');
+    l.textContent=f.name; rd.appendChild(c); rd.appendChild(l);
+  });
+  rangerPaths.forEach(r=>{
+    const c=document.createElementNS(NS,'circle');
+    c.setAttribute('r',5); c.setAttribute('class','rdot'); c.id='rdot-'+r.name;
+    const l=document.createElementNS(NS,'text');
+    l.setAttribute('class','rdlabel'); l.id='rdlabel-'+r.name; l.textContent=r.name;
+    rd.appendChild(c); rd.appendChild(l);
+  });
+  $('maplegend').innerHTML='● RANGER UNIT &nbsp; ● <span class="phos-red">DINO CONTACT</span> &nbsp; ◈ SECTOR kV LIVE';
+}
+// ranger dots + dino blips, 4fps is plenty
+setInterval(()=>{
+  if(!bootDone) return;
+  const NS='http://www.w3.org/2000/svg';
+  rangerPaths.forEach(r=>{
+    r.i=(r.i+r.speed)%r.pts.length;
+    const a=r.pts[Math.floor(r.i)], b=r.pts[(Math.floor(r.i)+1)%r.pts.length];
+    const fr=r.i%1, x=a[0]+(b[0]-a[0])*fr, y=a[1]+(b[1]-a[1])*fr;
+    const dot=document.getElementById('rdot-'+r.name), lb=document.getElementById('rdlabel-'+r.name);
+    if(dot){ dot.setAttribute('cx',x); dot.setAttribute('cy',y); dot.style.opacity=(Date.now()/400|0)%2?1:0.4; }
+    if(lb){ lb.setAttribute('x',x+8); lb.setAttribute('y',y+3); }
+  });
+  // occasional dino blip
+  if(Math.random()<0.10 && dinoBlips.length<3){
+    const g=$('dblips');
+    const c=document.createElementNS(NS,'circle');
+    const x=30+Math.random()*300, y=30+Math.random()*240;
+    c.setAttribute('cx',x); c.setAttribute('cy',y); c.setAttribute('r',6); c.setAttribute('class','dblip');
+    g.appendChild(c);
+    dinoBlips.push({el:c, born:Date.now()});
+  }
+  dinoBlips=dinoBlips.filter(d=>{
+    const age=Date.now()-d.born;
+    if(age>(d.ttl||8000)){ d.el.remove(); return false; }
+    d.el.style.opacity=(Date.now()/300|0)%2?1:0.25;
+    return true;
+  });
+  // urgent-chatter voltage dip on S2 expires here (no extra timer)
+  if(voltDipUntil && Date.now()>voltDipUntil){
+    voltDipUntil=0;
+    const s=sectors[1];
+    if(s.lowAlert){ s.lowAlert=false; updateFenceUI(); radioSys('S2 VOLTAGE STEADY — HOLDING 10kV.'); }
+  }
+  // live kV labels
+  sectors.forEach((s,i)=>{
+    const t=document.getElementById('mapkv-'+i);
+    if(t) t.textContent = !s.energized ? 'OFF' : (s.lowAlert ? 'LOW' : s.kv.toFixed(1)+'kV');
+  });
+},250);
+
+/* ================= SYS TERMINAL ================= */
+const termout=$('termout'), cmdin=$('cmdin');
+function termPrint(html, cls){
+  const d=document.createElement('div'); if(cls)d.className=cls; d.innerHTML=html;
+  termout.appendChild(d);
+  while(termout.children.length>80) termout.removeChild(termout.firstChild);
+  termout.scrollTop=termout.scrollHeight;
+}
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+async function termSeq(lines, gap){
+  for(const l of lines){ termPrint(l[0], l[1]); await sleep(gap||260); }
+}
+function scrambleResolve(el, final, done){
+  const chars='█▓▒░<>/\\|01';
+  let n=0;
+  const iv=setInterval(()=>{
+    n++;
+    let s='';
+    for(let i=0;i<final.length;i++)
+      s += i < n ? final[i] : (final[i]===' '||final[i]==='\n' ? final[i] : chars[Math.random()*chars.length|0]);
+    el.textContent=s;
+    if(n>=final.length){ clearInterval(iv); if(done)done(); }
+  },28);
+}
+const CMDS={
+  help(){ return [
+    ['&gt; AVAILABLE COMMANDS:','amb'],
+    ['  help — this list',''], ['  scan — perimeter sensor sweep',''],
+    ['  decrypt — decode memo 93-114',''], ['  override — MANUAL OVERRIDE minigame',''],
+    ['  status — park systems report',''], ['  geothermal — vent telemetry',''],
+    ['  census — animal headcount',''], ['  roster — ranger roster',''],
+    ['  clear — wipe terminal',''],
+  ];},
+};
+let scanRunning=false;
+async function runScan(){
+  if(scanRunning){ termPrint('> <span class="phos-amber">SCAN IN PROGRESS…</span>',''); return; }
+  scanRunning=true;
+  try{
+    await termSeq([["> INITIATING SECTOR SWEEP…",'amb']]);
+    for(let p=0;p<=100;p+=12){
+      const f=Math.floor(p/100*24);
+      termPrint('['+'█'.repeat(f)+'░'.repeat(24-f)+'] '+p+'%');
+      await sleep(160);
+    }
+    const n=2+Math.floor(Math.random()*4), sec=1+Math.floor(Math.random()*6);
+    await termSeq([
+      ['> SWEEP COMPLETE.','ok'],
+      ['> '+n+' LARGE CONTACT'+(n>1?'S':'')+' — SECTOR '+sec,'amb'],
+    ]);
+    // stateful: a hot scan feeds the living park — queued motion alert + map blips
+    if(Math.random()<0.5){
+      fireAlert({msg:'⚠ MOTION DETECTED — SECTOR '+sec, sev:'amb'});
+      spawnBlipsInSector(sec-1, 1+Math.floor(Math.random()*2));
+      termPrint('> <span class="phos-amber">RECOMMENDATION: MOTION LOGGED — WATCH SECTOR '+sec+'.</span>','');
+    } else {
+      termPrint('> RECOMMENDATION: ROUTINE WATCH.','');
+    }
+  } finally { scanRunning=false; }
+}
+async function runDecrypt(){
+  termPrint('> DECODING MEMO 93-114…','amb');
+  const d=document.createElement('div'); d.className='amb'; termout.appendChild(d);
+  const memo='MEMO 93-114 — GEOTHERMAL VENT 3 RUNNING HOT. IF THE RIDGE RUMBLES, IT IS JUST THE PARK BREATHING. - ASHFALL';
+  await new Promise(res=>scrambleResolve(d,memo,res));
+  termPrint('> DECODE COMPLETE.','ok'); blip(980,0.1,'square',0.14);
+}
+async function runStatus(){
+  const down=sectors.filter(s=>!s.energized).length;
+  const open=gates.filter(g=>g.state==='OPEN').length;
+  await termSeq([
+    ['> CINDER RIDGE SANCTUARY — SYSTEMS REPORT','amb'],
+    ['  PERIMETER FENCE ... '+(down?'<span class="phos-red">'+down+' DOWN</span>':'NOMINAL'),''],
+    ['  GATES ............. '+open+' OPEN / '+(gates.length-open)+' SEALED',''],
+    ['  CAMERAS ........... 4/4 ONLINE',''],
+    ['  GEOTHERMAL ........ 41.2 MW OUTPUT',''],
+    ['  RANGERS ON SHIFT .. 6',''],
+    ['  ALERTS THIS SHIFT . '+alertTotal,''],
+  ]);
+}
+async function runGeothermal(){
+  await termSeq([
+    ['> GEOTHERMAL VENT TELEMETRY','amb'],
+    ['  VENT 1 .. 612°C .. 12.4 MW .. NOMINAL',''],
+    ['  VENT 2 .. 588°C .. 11.9 MW .. NOMINAL',''],
+    ['  VENT 3 .. 701°C .. 16.9 MW .. <span class="phos-amber">RUNNING HOT</span>',''],
+    ['> TOTAL OUTPUT: 41.2 MW — FENCE GRID AT 118% CAPACITY','ok'],
+  ]);
+}
+async function runCensus(){
+  await termSeq([
+    ['> DINO CENSUS — LAST DRONE PASS 02:14','amb'],
+    ['  LONG-NECK GRAZERS ...... 14',''],
+    ['  BIPED HUNTERS ........... 6',''],
+    ['  ARMORED BROWSERS ........ 9',''],
+    ['  PACK RUNNERS ........... 22',''],
+    ['> TOTAL 51 HEAD — ALL TAGGED, ALL COUNTED.','ok'],
+  ]);
+}
+async function runRoster(){
+  await termSeq([
+    ['> RANGER ROSTER — NIGHT SHIFT','amb'],
+    ['  ASHFALL .... LEAD RANGER / COMMAND',''],
+    ['  LONGSHOT ... NORTH RIDGE SCOUT',''],
+    ['  BRAMBLE .... TREELINE TRACKER',''],
+    ['  HALIDE ..... CAMERA ROOM / NIGHT OPS',''],
+    ['  GATEKEEPER . GATE CONTROL',''],
+    ['  DUSKWATCH .. PERIMETER PATROL',''],
+  ]);
+}
+// --- MANUAL OVERRIDE minigame ---
+let mgState=null, mgOpen=false; // mgOpen mirrors the overlay (DOM class is unreliable in stubs)
+function startMinigame(){
+  if(Date.now()<mgLockoutUntil){
+    const s=Math.ceil((mgLockoutUntil-Date.now())/1000);
+    termPrint('> <span class="phos-red">LOCKOUT ACTIVE — '+s+'s REMAINING.</span>','err');
+    errBuzz(); return;
+  }
+  uiBlip();
+  $('minigame').classList.remove('hidden');
+  mgOpen=true;
+  const need=5, timeMs=8000, t0=Date.now(); // earned, not given
+  mgState={count:0, need, done:false};
+  $('mgcount').textContent='0 / '+need;
+  const node=$('mgnode');
+  node.style.left='80px'; node.style.top='80px';
+  node.style.width='120px'; node.style.height='120px';
+  const bar=$('mgtimer').firstElementChild;
+  const iv=setInterval(()=>{
+    if(!mgState || mgState.done){ clearInterval(iv); return; }
+    const left=1-(Date.now()-t0)/timeMs;
+    bar.style.width=Math.max(0,left*100)+'%';
+    bar.style.background=left<0.25?'var(--red)':'var(--grn)';
+    if(left<=0){
+      clearInterval(iv); mgState.done=true; mgOpen=false;
+      $('minigame').classList.add('hidden');
+      mgLockoutUntil=Date.now()+15000;
+      errBuzz();
+      termPrint('> <span class="phos-red">OVERRIDE FAILED — RETRY. LOCKOUT 15s.</span>','err');
+      radioSys('MANUAL OVERRIDE <span class="phos-red">FAILED</span> — LOCKOUT ENGAGED.');
+    }
+  },100);
+}
+$('mgnode').addEventListener('pointerdown', e=>{
+  e.preventDefault(); e.stopPropagation();
+  if(!mgState || mgState.done) return;
+  resumeAudio(); blip(700+mgState.count*160,0.08,'square',0.16);
+  mgState.count++;
+  $('mgcount').textContent=mgState.count+' / '+mgState.need;
+  // the system fights back: teleport the node, shrink it slightly per tap
+  const node=$('mgnode');
+  node.style.left=(8+Math.random()*144)+'px';
+  node.style.top=(8+Math.random()*144)+'px';
+  const sh=Math.max(88, 120-mgState.count*8);
+  node.style.width=sh+'px'; node.style.height=sh+'px';
+  if(mgState.count>=mgState.need){
+    mgState.done=true; mgOpen=false;
+    $('minigame').classList.add('hidden');
+    // THE PAYOFF: 90 seconds of INTERLOCK BYPASS — gates open on energized sectors
+    overrideUntil=Date.now()+90000;
+    updateGateBypassUI();
+    termPrint('> <span class="phos">ACCESS GRANTED — INTERLOCK BYPASS 90s.</span>','ok');
+    blip(520,0.12,'square',0.15); setTimeout(()=>blip(780,0.16,'square',0.15),140);
+    radioSys('MANUAL OVERRIDE <span class="phos">ACCEPTED</span>.');
+    radioMsg('ASHFALL','Terminal — did you just bypass my interlocks? Log it. Now.',true);
+    if(!klaxonNodes){ klaxonStart(); setTimeout(klaxonStop,3000); } // burst, not a loop
+  }
+});
+$('mgcancel').addEventListener('click', ()=>{
+  if(mgState) mgState.done=true;
+  mgOpen=false;
+  $('minigame').classList.add('hidden'); uiBlip(440,'square');
+  termPrint('> OVERRIDE ABORTED.','');
+});
+async function runOverride(){
+  if(Date.now()<mgLockoutUntil){
+    const s=Math.ceil((mgLockoutUntil-Date.now())/1000);
+    termPrint('> <span class="phos-red">LOCKOUT ACTIVE — '+s+'s REMAINING.</span>','err'); errBuzz(); return;
+  }
+  termPrint("> <span class='phos-amber'>WARNING: MANUAL OVERRIDE BYPASSES SAFETY INTERLOCKS.</span>",'');
+  termPrint("> TYPE 'confirm' WITHIN 20 SECONDS TO ARM.",'amb');
+  overrideArmedUntil=Date.now()+20000;
+}
+let overrideArmedUntil=0;
+async function parseCmd(raw){
+  const cmd=raw.trim().toLowerCase();
+  termPrint('<span class="dim">&gt;</span> '+raw.replace(/</g,'&lt;'));
+  if(!cmd) return;
+  uiBlip(880);
+  if(cmd==='help'){ CMDS.help().forEach(l=>termPrint(l[0],l[1])); }
+  else if(cmd==='scan'){ await runScan(); }
+  else if(cmd==='decrypt'){ await runDecrypt(); }
+  else if(cmd==='override'){ await runOverride(); }
+  else if(cmd==='confirm'){
+    if(Date.now()<overrideArmedUntil){ overrideArmedUntil=0; startMinigame(); }
+    else { termPrint("> <span class='phos-red'>NOTHING ARMED. TYPE 'override' FIRST.</span>",'err'); errBuzz(); }
+  }
+  else if(cmd==='status'){ await runStatus(); }
+  else if(cmd==='geothermal'){ await runGeothermal(); }
+  else if(cmd==='census'){ await runCensus(); }
+  else if(cmd==='roster'){ await runRoster(); }
+  else if(cmd==='clear'){ termout.innerHTML=''; }
+  else { termPrint("> <span class='phos-red'>ERR: UNKNOWN COMMAND — TYPE 'help'</span>",'err'); errBuzz(); }
+}
+cmdin.addEventListener('keydown', e=>{
+  if(e.key==='Enter'){ const v=cmdin.value; cmdin.value=''; parseCmd(v); }
+});
+termPrint('RANGER TERMINAL v2.3.1 — TYPE <span class="phos-amber">help</span>','');
+
+/* ================= ALERTS ================= */
+const alertDefs=[
+  ()=>({msg:'⚠ MOTION DETECTED — SECTOR '+(1+Math.floor(Math.random()*6)), sev:'amb'}),
+  ()=>{ const i=Math.floor(Math.random()*6);
+        return {msg:'⚠ FENCE VOLTAGE DROP — SECTOR S'+(i+1), sev:'red', fx:()=>{ sectors[i].lowAlert=true; updateFenceUI(); }, unfx:()=>{ sectors[i].lowAlert=false; sectors[i].target=sectors[i].energized?10:0; updateFenceUI(); }}; },
+  ()=>({msg:'⚠ INTRUDER? — EAST SERVICE GATE', sev:'red'}),
+  ()=>({msg:'⚠ GATE SENSOR FAULT — NORTH GATE', sev:'amb'}),
+  ()=>({msg:'⚠ SEISMIC TREMOR — RIDGE LINE (MINOR)', sev:'amb'}),
+];
+function bumpAlerts(msg, quiet){
+  if(quiet){ alertTotal++; return; }
+  fireAlert({msg, sev:'red'});
+}
+function fireAlert(a){
+  // the minigame owns the screen — defer the banner until it closes (ack stays reachable)
+  if(mgOpen){
+    setTimeout(()=>fireAlert(a),4000);
+    return;
+  }
+  alertTotal++;
+  if(activeAlert){ alertQueue.push(a); return; }
+  activeAlert=a;
+  if(a.fx) a.fx();
+  $('alertmsg').textContent=a.msg;
+  $('alertbanner').classList.remove('hidden');
+  $('alertbanner').classList.remove('escalate');
+  // klaxon discipline: a ~5s burst announces the alert; the flashing banner
+  // carries the reminder. Only stop a klaxon this call started.
+  if(!klaxonNodes){ klaxonStart(); setTimeout(klaxonStop,5000); }
+  radioSys('<span class="phos-red">'+a.msg+'</span>');
+  // escalation: 30s unacknowledged → faster pulse
+  a.escTimer=setTimeout(()=>{
+    if(activeAlert===a){ $('alertbanner').classList.add('escalate'); radioSys('<span class="phos-red">ALERT ESCALATING — '+a.msg+'</span>'); }
+  },30000);
+}
+function ackAlert(){
+  if(!activeAlert) return;
+  uiBlip(780); klaxonStop();
+  clearTimeout(activeAlert.escTimer);
+  if(activeAlert.unfx) activeAlert.unfx();
+  radioSys('ALERT ACKNOWLEDGED: '+activeAlert.msg);
+  activeAlert=null;
+  $('alertbanner').classList.add('hidden');
+  const badge=$('alertbadge');
+  badge.textContent='◈ '+alertQueue.length+' ALERT'+(alertQueue.length===1?'':'S')+' QUEUED — STANDBY';
+  badge.classList.toggle('hidden', alertQueue.length===0);
+  if(alertQueue.length) fireAlert(alertQueue.shift());
+}
+$('ackbtn').addEventListener('click', ackAlert);
+$('dispatchbtn').addEventListener('click', ()=>{
+  if(!activeAlert) return;
+  uiBlip(640);
+  const alertMsg=activeAlert.msg;
+  const r=RANGERS[1+Math.floor(Math.random()*(RANGERS.length-1))];
+  const where=alertMsg.split('—')[1] ? alertMsg.split('—')[1].trim() : 'THE ALERT ZONE';
+  radioTx('ASHFALL, this is Terminal — dispatching '+r+' to '+where+'.');
+  setTimeout(()=>radioMsg(r,'Copy, en route to '+where.toLowerCase()+'.'),2200);
+  setTimeout(()=>radioMsg(r,'On site. Sweeping the area…'),9000);
+  setTimeout(()=>dispatchOutcome(r, alertMsg),16000);
+  ackAlert();
+});
+// dispatch is a decision now, not a cutscene: 60% all-clear (branched by alert
+// type), 30% real contact (map blip), 10% real fence fault (that sector sags
+// to 2.5kV until the new alert is acknowledged).
+function dispatchOutcome(r, alertMsg){
+  const roll=Math.random();
+  const m=String(alertMsg).toUpperCase();
+  const secMatch=/SECTOR S?(\d)/.exec(m);
+  const secIdx=secMatch ? (+secMatch[1])-1 : Math.floor(Math.random()*6);
+  if(roll<0.60){
+    if(m.indexOf('GATE SENSOR FAULT')>=0) radioMsg(r,'All clear. Sensor reset — gate\u2019s cycling clean. Heading back.');
+    else if(m.indexOf('TREMOR')>=0) radioMsg(r,'All clear. No damage on the ridge line. Heading back.');
+    else if(m.indexOf('VOLTAGE DROP')>=0) radioMsg(r,'All clear. Swapped the relay — fence is climbing back to 10kV. Heading back.');
+    else if(m.indexOf('INTRUDER')>=0) radioMsg(r,'All clear. Tracked it off the east fence — keeping watch. Heading back.');
+    else radioMsg(r,'All clear. False alarm — logging it and heading back.');
+  } else if(roll<0.90){
+    radioMsg(r,'Contact confirmed — big grazer at the fence line. Logging it, heading back.');
+    spawnBlipsInSector(secIdx,1);
+  } else {
+    const s=sectors[secIdx];
+    radioMsg(r,'Found a real fault — sector '+s.id+' fence is sagging. Leaving it flagged for the crew.');
+    fireAlert({msg:'⚠ FENCE VOLTAGE DROP — SECTOR '+s.id, sev:'red',
+      fx:()=>{ s.lowAlert=true; updateFenceUI(); },
+      unfx:()=>{ s.lowAlert=false; s.target=s.energized?10:0; updateFenceUI(); }});
+  }
+}
+function scheduleAlerts(){
+  setTimeout(()=>fireAlert(alertDefs[Math.floor(Math.random()*alertDefs.length)]()), 60000); // first alert at 60s, not 25s
+  (function loop(){
+    setTimeout(()=>{ fireAlert(alertDefs[Math.floor(Math.random()*alertDefs.length)]()); loop(); }, 45000+Math.random()*45000);
+  })();
+}
+
+/* ================= IDLE STANDBY ================= */
+let idleLast=Date.now();
+setInterval(()=>{
+  if(!bootDone) return;
+  if(Date.now()-idleLast>60000 && !mgOpen
+     && $('idleveil').classList.contains('hidden')){
+    klaxonStop(); // never declare STANDBY over a live siren
+    $('idleveil').classList.remove('hidden');
+  }
+},5000);
+$('idleveil').addEventListener('pointerdown', ()=>{ uiBlip(660); anyInput(); });
+
+// sparse distant rumbles + insect chirps for life
+setInterval(()=>{ if(bootDone){ if(Math.random()<0.5) distantRumble(); if(Math.random()<0.55) insectChirp(); } }, 25000);
+
+/* iOS keyboard survival: the fixed layout never shrinks for the software
+   keyboard, so pad the scroll area by the keyboard height (visualViewport)
+   and keep the input row scrollable into view. No autofocus on tab switch —
+   the keyboard opens only on an explicit tap of the input. */
+(function(){
+  const vv=window.visualViewport;
+  if(!vv || !vv.addEventListener) return;
+  const apply=()=>{
+    const kb=Math.max(0,(window.innerHeight||0)-vv.height);
+    const p=$('panels');
+    if(p) p.style.paddingBottom = kb>40 ? kb+'px' : '';
+    if(document.activeElement===$('cmdin')){ try{ $('termin').scrollIntoView(false); }catch(e){} }
+  };
+  vv.addEventListener('resize', apply);
+})();
+cmdin.addEventListener('focus', ()=>{ try{ $('termin').scrollIntoView(false); }catch(e){} });
+
+/* ================= INIT ================= */
+buildFence(); buildGates(); buildFeeds(); buildMap();
+$('tab-comms').classList.add('active');
+$('mutebtn').addEventListener('click', e=>{ e.stopPropagation(); resumeAudio(); setMuted(!muted); if(!muted) uiBlip(); });
+</script>
+</body>
+</html>
