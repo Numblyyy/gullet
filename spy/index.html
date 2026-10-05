@@ -1,0 +1,1134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#05070a">
+<title>GHOSTLINE // UMBRA-7</title>
+<style>
+:root{
+  --bg:#05070a; --bg2:#0a0e14; --glass:rgba(16,22,32,.72); --line:rgba(0,230,195,.18);
+  --teal:#00e6c3; --cyan:#35c7ff; --amber:#ffb347; --red:#ff3b4e; --grn:#7dff9a;
+  --txt:#d9e2ec; --mut:#7c8794; --dim:#4a545e;
+  --sat: env(safe-area-inset-top, 0px); --sab: env(safe-area-inset-bottom, 0px);
+  --sal: env(safe-area-inset-left, 0px); --sar: env(safe-area-inset-right, 0px);
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden;overscroll-behavior:none;background:var(--bg)}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Inter,Helvetica,Arial,sans-serif;
+  color:var(--txt); font-weight:300; letter-spacing:.02em;
+  position:fixed; inset:0; width:100%; touch-action:manipulation; user-select:none; -webkit-user-select:none;
+}
+.mono{font-family:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,monospace}
+button{font-family:inherit;touch-action:manipulation}
+/* ---------- vignette + grain overlays ---------- */
+#vignette{position:fixed;inset:0;pointer-events:none;z-index:9000;
+  background:radial-gradient(ellipse at center,transparent 55%,rgba(0,0,0,.55) 100%)}
+#nvTint{position:fixed;inset:0;pointer-events:none;z-index:8999;opacity:0;transition:opacity .5s;
+  background:rgba(20,255,120,.10);mix-blend-mode:screen}
+body.nv #nvTint{opacity:1}
+body.nv{--teal:#7dff9a;--cyan:#a8ffc0;--line:rgba(125,255,154,.22)}
+/* ---------- BOOT ---------- */
+#boot{position:fixed;inset:0;background:#000;z-index:10000;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;padding:32px;gap:18px}
+#boot .logo{font-size:26px;letter-spacing:.55em;font-weight:200;color:var(--teal);
+  text-shadow:0 0 24px rgba(0,230,195,.6)}
+#boot .sub{font-size:11px;letter-spacing:.4em;color:var(--mut)}
+#bootLog{width:100%;max-width:330px;height:170px;overflow:hidden;font-size:11px;line-height:1.7;
+  color:#8fa3b3;opacity:0;transition:opacity .6s}
+#bootLog .ok{color:var(--teal)} #bootLog .warn{color:var(--amber)}
+#initBtn{opacity:0;pointer-events:none;transition:opacity .8s;margin-top:6px;
+  border:1px solid var(--teal);background:rgba(0,230,195,.08);color:var(--teal);
+  padding:18px 44px;font-size:15px;letter-spacing:.35em;font-weight:400;min-height:60px;
+  animation:pulseB 2s infinite}
+#initBtn.ready{opacity:1;pointer-events:auto}
+@keyframes pulseB{0%,100%{box-shadow:0 0 0 rgba(0,230,195,.0)}50%{box-shadow:0 0 28px rgba(0,230,195,.45)}}
+/* ---------- AUTH ---------- */
+#auth{position:fixed;inset:0;background:radial-gradient(circle at 50% 35%,#0b1119,#020304 70%);
+  z-index:9900;display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:32px}
+#auth h2{font-size:13px;letter-spacing:.45em;color:var(--mut);font-weight:400}
+#printWrap{position:relative;width:190px;height:190px;margin:10px 0}
+#printRing{position:absolute;inset:0;transform:rotate(-90deg)}
+#printRing circle.bg{fill:none;stroke:rgba(255,255,255,.08);stroke-width:3}
+#printRing circle.fg{fill:none;stroke:var(--teal);stroke-width:3;stroke-linecap:round;
+  stroke-dasharray:565;stroke-dashoffset:565}
+#printSVG{position:absolute;inset:22px;opacity:.85}
+#scanline{position:absolute;left:14px;right:14px;height:2px;background:var(--teal);
+  box-shadow:0 0 14px var(--teal);top:10%;opacity:0}
+#authMsg{font-size:12px;letter-spacing:.25em;color:var(--teal);min-height:20px;text-align:center}
+#authHint{font-size:11px;color:var(--dim);letter-spacing:.15em;text-align:center;line-height:1.8}
+/* ---------- APP SHELL ---------- */
+#app{display:none;position:fixed;inset:0;flex-direction:column;
+  padding:var(--sat) var(--sar) 0 var(--sal);background:
+  linear-gradient(rgba(45,226,214,.05) 1px,transparent 1px),
+  linear-gradient(90deg,rgba(45,226,214,.05) 1px,transparent 1px),
+  radial-gradient(1200px 600px at 80% -10%,rgba(0,230,195,.06),transparent),
+  radial-gradient(900px 500px at 10% 110%,rgba(53,199,255,.05),transparent),var(--bg);
+  background-size:24px 24px,24px 24px,auto,auto,auto}
+#hdr{display:flex;align-items:center;justify-content:space-between;padding:10px 16px 8px}
+#hdr .brand{font-size:13px;letter-spacing:.4em;color:var(--teal);font-weight:400}
+#hdr .brand small{display:block;font-size:8px;letter-spacing:.32em;color:var(--mut);margin-top:2px}
+#hdrRight{display:flex;align-items:center;gap:10px}
+#clock{font-size:11px;color:var(--mut);letter-spacing:.15em}
+.iconBtn{width:44px;height:44px;border:1px solid var(--line);border-radius:10px;background:var(--glass);
+  color:var(--teal);font-size:17px;display:flex;align-items:center;justify-content:center}
+#screen{flex:1;overflow-y:auto;overflow-x:hidden;padding:6px 14px 14px;-webkit-overflow-scrolling:touch}
+.tab{display:none;animation:tabIn .28s ease}
+.tab.active{display:block}
+@keyframes tabIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+#tabbar{display:flex;overflow-x:auto;gap:6px;padding:8px 10px calc(10px + var(--sab));
+  border-top:1px solid var(--line);background:rgba(5,8,12,.92);-webkit-overflow-scrolling:touch}
+#tabbar::-webkit-scrollbar{display:none}
+.ttab{flex:0 0 auto;min-width:64px;min-height:52px;border:1px solid transparent;border-radius:12px;
+  background:transparent;color:var(--mut);font-size:10px;letter-spacing:.18em;display:flex;
+  flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:6px 10px}
+.ttab .ic{font-size:18px}
+.ttab.active{color:var(--teal);border-color:var(--line);background:rgba(0,230,195,.07)}
+.ttab.danger.active{color:var(--red);border-color:rgba(255,59,78,.35);background:rgba(255,59,78,.08)}
+/* ---------- shared components ---------- */
+.panel{background:var(--glass);border:1px solid var(--line);border-radius:14px;padding:14px;
+  margin-bottom:12px;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+.ptitle{font-size:10px;letter-spacing:.32em;color:var(--teal);margin-bottom:10px;font-weight:500}
+.btn{display:block;width:100%;min-height:52px;border:1px solid var(--line);border-radius:12px;
+  background:rgba(0,230,195,.06);color:var(--txt);font-size:13px;letter-spacing:.2em;
+  margin:8px 0;transition:transform .08s}
+.btn:active{transform:scale(.97);background:rgba(0,230,195,.14)}
+.btn.teal{background:rgba(0,230,195,.14);color:var(--teal);border-color:rgba(0,230,195,.4)}
+.btn.red{border-color:rgba(255,59,78,.5);color:var(--red);background:rgba(255,59,78,.08)}
+.btn.ghost{background:transparent}
+.btn.small{min-height:44px;font-size:11px}
+.row{display:flex;gap:8px}.row .btn{margin:4px 0}
+.kv{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:13px}
+.kv:last-child{border-bottom:none}
+.kv b{color:var(--teal);font-weight:500}
+.kv span{color:var(--mut)}
+.bar{height:6px;background:rgba(255,255,255,.07);border-radius:3px;overflow:hidden;margin:6px 0}
+.bar i{display:block;height:100%;background:linear-gradient(90deg,var(--teal),var(--cyan));
+  border-radius:3px;transition:width .5s}
+.chip{display:inline-block;padding:10px 14px;margin:4px;border:1px solid var(--line);border-radius:20px;
+  font-size:12px;color:var(--teal);background:rgba(0,230,195,.06);min-height:44px}
+.chip:active{background:rgba(0,230,195,.2)}
+/* ---------- dossier ---------- */
+#agentCard{text-align:center;padding:20px 14px}
+#codenameBig{font-size:30px;letter-spacing:.3em;color:var(--txt);font-weight:200;margin:8px 0 2px}
+#clearLvl{font-size:11px;letter-spacing:.35em;color:var(--amber)}
+#agentSigil{width:84px;height:84px;margin:0 auto;border:1px solid var(--line);border-radius:50%;
+  display:flex;align-items:center;justify-content:center;font-size:34px;
+  box-shadow:0 0 30px rgba(0,230,195,.15) inset}
+.statGrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.stat{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:10px;
+  padding:12px;text-align:center}
+.stat .n{font-size:24px;color:var(--teal);font-weight:300}
+.stat .l{font-size:9px;letter-spacing:.25em;color:var(--mut);margin-top:4px}
+/* ---------- comms ---------- */
+.msg{border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:12px;margin-bottom:10px;
+  background:rgba(255,255,255,.02)}
+.msg .mh{display:flex;justify-content:space-between;font-size:10px;letter-spacing:.2em;
+  color:var(--mut);margin-bottom:8px}
+.msg.unread{border-color:rgba(0,230,195,.35)}
+.msg .body{font-size:13px;line-height:1.6;min-height:44px;word-break:break-word}
+.msg.unread .body{color:var(--teal)}
+.badge{font-size:9px;letter-spacing:.2em;padding:3px 8px;border-radius:8px;border:1px solid var(--line);
+  color:var(--teal)}
+.badge.new{background:var(--teal);color:#000;font-weight:600}
+#replyZone{margin-top:6px}
+.sent{border-color:rgba(53,199,255,.3)} .sent .body{color:var(--cyan)}
+/* ---------- surveillance ---------- */
+.feedWrap{position:relative;border:1px solid var(--line);border-radius:12px;overflow:hidden;
+  margin-bottom:12px;background:#000}
+.feedWrap canvas{display:block;width:100%;height:150px}
+.feedTag{position:absolute;top:8px;left:10px;font-size:10px;letter-spacing:.25em;color:#fff;
+  background:rgba(0,0,0,.55);padding:4px 8px;border-radius:6px}
+.feedTag .rec{display:inline-block;width:7px;height:7px;border-radius:50%;background:#ff3b4e;
+  margin-right:6px;animation:blink 1.2s infinite}
+@keyframes blink{50%{opacity:.2}}
+.feedTag.locked{color:var(--red)}
+.feedTag .live{color:#ff5b6a;font-size:9px;letter-spacing:.2em}
+/* corner brackets — the "this is live" mark (brief §4) */
+.cb{position:absolute;width:14px;height:14px;border:2px solid rgba(0,230,195,.85);
+  pointer-events:none;z-index:5}
+.cb.tl{top:6px;left:6px;border-right:0;border-bottom:0;border-top-left-radius:4px}
+.cb.tr{top:6px;right:6px;border-left:0;border-bottom:0;border-top-right-radius:4px}
+.cb.bl{bottom:6px;left:6px;border-right:0;border-top:0;border-bottom-left-radius:4px}
+.cb.br{bottom:6px;right:6px;border-left:0;border-top:0;border-bottom-right-radius:4px}
+/* radar sweep on the tracker map — 4s/rev (brief §4) */
+#sweep{position:absolute;inset:0;pointer-events:none;border-radius:12px;
+  background:conic-gradient(from 0deg at 50% 50%,rgba(0,230,195,.30),transparent 18%);
+  animation:sweep 4s linear infinite}
+#sweepCore{position:absolute;left:50%;top:50%;width:7px;height:7px;margin:-3.5px 0 0 -3.5px;
+  border-radius:50%;background:var(--teal);box-shadow:0 0 10px var(--teal);pointer-events:none}
+@keyframes sweep{to{transform:rotate(1turn)}}
+@media (prefers-reduced-motion:reduce){#sweep{animation:none}}
+body.nightvis .feedWrap canvas{filter:saturate(.4) hue-rotate(80deg) brightness(1.1) contrast(1.25)}
+.seg{display:flex;border:1px solid var(--line);border-radius:12px;overflow:hidden;margin:8px 0}
+.seg button{flex:1;min-height:48px;background:transparent;border:none;color:var(--mut);
+  font-size:11px;letter-spacing:.2em}
+.seg button.on{background:rgba(0,230,195,.15);color:var(--teal)}
+/* ---------- map ---------- */
+#mapSVG{width:100%;height:340px;display:block;background:#04060a;border-radius:12px;
+  border:1px solid var(--line)}
+.blip{cursor:pointer}
+/* ---------- terminal ---------- */
+#termOut{height:300px;overflow-y:auto;font-size:12px;line-height:1.65;padding:4px 2px}
+#termOut .p{color:var(--teal)} #termOut .e{color:var(--red)} #termOut .d{color:var(--dim)}
+#termOut .w{color:var(--amber)} #termOut .c{color:var(--cyan)}
+#termRow{display:flex;gap:8px;margin-top:8px}
+#termIn{flex:1;min-height:48px;background:rgba(0,0,0,.5);border:1px solid var(--line);border-radius:10px;
+  color:var(--teal);padding:0 12px;font-size:14px}
+#termIn:focus{outline:none;border-color:var(--teal)}
+#codePads{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:10px}
+.pad{min-height:72px;border-radius:12px;border:1px solid var(--line);font-size:11px;
+  letter-spacing:.25em;color:var(--txt);background:rgba(255,255,255,.03)}
+.pad.lit{background:var(--teal);color:#000;box-shadow:0 0 26px var(--teal)}
+/* ---------- laser minigame ---------- */
+#laserCv{width:100%;height:260px;display:block;background:#04060a;border-radius:12px;
+  border:1px solid var(--line);touch-action:none}
+/* ---------- missions ---------- */
+.mission{border-left:3px solid var(--dim)}
+.mission.done{border-left-color:var(--grn);opacity:.75}
+.obj{display:flex;align-items:center;gap:10px;padding:9px 0;font-size:13px;border-bottom:1px solid rgba(255,255,255,.05)}
+.obj:last-child{border:none}
+.obj .box{width:22px;height:22px;border:1px solid var(--dim);border-radius:6px;flex:0 0 auto;
+  display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--grn)}
+.obj.hit .box{border-color:var(--grn);background:rgba(125,255,154,.1)}
+.obj.hit{color:var(--mut);text-decoration:line-through}
+/* ---------- self destruct ---------- */
+#killPane{text-align:center;padding:26px 14px}
+#killBtn{width:190px;height:190px;border-radius:50%;margin:18px auto;border:3px solid var(--red);
+  background:radial-gradient(circle,rgba(255,59,78,.22),rgba(255,59,78,.04));
+  color:var(--red);font-size:15px;letter-spacing:.25em;position:relative;overflow:hidden}
+#killBtn:active{transform:scale(.98)}
+#killRing{position:absolute;inset:-3px;transform:rotate(-90deg)}
+#killRing circle{fill:none;stroke:var(--red);stroke-width:5;stroke-linecap:round;
+  stroke-dasharray:584;stroke-dashoffset:584}
+#sdOverlay{position:fixed;inset:0;background:#000;z-index:9800;display:none;flex-direction:column;
+  align-items:center;justify-content:center;gap:14px;padding:30px;text-align:center}
+#sdOverlay.alarm{background:#1a0205;animation:alarmBg .8s infinite}
+@keyframes alarmBg{50%{background:#3a050c}}
+#sdCount{font-size:96px;font-weight:100;color:var(--red);letter-spacing:.05em}
+/* ---------- emp / reboot ---------- */
+#flash{position:fixed;inset:0;background:#fff;z-index:9700;opacity:0;pointer-events:none}
+#reboot{position:fixed;inset:0;background:#000;z-index:9750;display:none;flex-direction:column;
+  align-items:center;justify-content:center;gap:16px;padding:40px}
+#reboot .bar{width:min(300px,80%)}
+/* ---------- toasts ---------- */
+#toasts{position:fixed;top:calc(var(--sat) + 64px);left:14px;right:14px;z-index:9400;
+  display:flex;flex-direction:column;gap:8px;pointer-events:none}
+.toast{pointer-events:auto;background:rgba(10,16,24,.94);border:1px solid var(--line);border-radius:12px;
+  padding:12px 14px;font-size:12px;display:flex;gap:10px;align-items:center;
+  animation:tabIn .3s ease;box-shadow:0 8px 30px rgba(0,0,0,.5)}
+.toast .x{margin-left:auto;color:var(--dim);font-size:16px;padding:6px;min-width:44px;min-height:44px;
+  display:flex;align-items:center;justify-content:center}
+.toast b{color:var(--teal);font-weight:500;letter-spacing:.1em}
+.big{font-size:15px!important}
+.hint{font-size:11px;color:var(--dim);letter-spacing:.12em;line-height:1.7;margin-top:6px}
+.hidden{display:none!important}
+</style>
+</head>
+<body>
+<div id="vignette"></div><div id="nvTint"></div>
+
+<!-- BOOT -->
+<div id="boot">
+  <div class="logo">GHOSTLINE</div>
+  <div class="sub">UMBRA-7 FIELD KIT</div>
+  <div id="bootLog" class="mono"></div>
+  <div class="hint" id="bootSkip" style="text-align:center">TAP ANYWHERE TO SKIP</div>
+  <button id="initBtn">TAP TO INITIALIZE</button>
+</div>
+
+<!-- AUTH -->
+<div id="auth">
+  <h2>BIOMETRIC VERIFICATION</h2>
+  <div id="printWrap">
+    <svg id="printRing" viewBox="0 0 190 190">
+      <circle class="bg" cx="95" cy="95" r="90"/>
+      <circle class="fg" id="ringFg" cx="95" cy="95" r="90"/>
+    </svg>
+    <svg id="printSVG" viewBox="0 0 146 146"></svg>
+    <div id="scanline"></div>
+  </div>
+  <div id="authMsg">PRESS &amp; HOLD TO SCAN</div>
+  <div id="authHint">PLACE FINGER ON THE SENSOR<br>AND HOLD UNTIL THE RING COMPLETES</div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <div id="hdr">
+    <div class="brand">GHOSTLINE<small>UMBRA-7 // FIELD KIT</small></div>
+    <div id="hdrRight">
+      <div id="clock" class="mono">--:--</div>
+      <button class="iconBtn" id="sndBtn" aria-label="sound">🔊</button>
+    </div>
+  </div>
+  <div id="screen"></div>
+  <div id="tabbar"></div>
+</div>
+
+<div id="flash"></div>
+<div id="reboot">
+  <div class="logo mono" style="font-size:18px;letter-spacing:.4em;color:var(--teal)">GHOSTLINE</div>
+  <div class="mono" id="rebootMsg" style="font-size:12px;letter-spacing:.25em;color:var(--mut)">SYSTEMS REBOOTING</div>
+  <div class="bar"><i id="rebootBar" style="width:0%"></i></div>
+</div>
+<div id="sdOverlay">
+  <div class="mono" style="letter-spacing:.4em;color:var(--red);font-size:13px">⚠ SELF-DESTRUCT ARMED ⚠</div>
+  <div id="sdCount" class="mono">10</div>
+  <div class="mono" id="sdMsg" style="font-size:11px;letter-spacing:.25em;color:var(--mut)">EVACUATE THE AREA</div>
+  <button class="btn red" id="sdAbort" style="max-width:280px">ABORT SEQUENCE</button>
+</div>
+<div id="toasts"></div>
+
+<script>
+"use strict";
+/* =====================================================================
+   GHOSTLINE // UMBRA-7 — fictional field-kit theater. All data simulated.
+   ===================================================================== */
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const LS="spydev.";
+const store={
+  get(k,d){try{const v=localStorage.getItem(LS+k);return v==null?d:JSON.parse(v)}catch(e){return d}},
+  set(k,v){try{localStorage.setItem(LS+k,JSON.stringify(v))}catch(e){}}
+};
+/* ---------------- AUDIO ENGINE (100% procedural Web Audio) ---------------- */
+const AU={ctx:null,on:true,humNodes:null,
+init(){if(this.ctx)return;try{this.ctx=new(window.AudioContext||window.webkitAudioContext)();}catch(e){}},
+resume(){if(this.ctx&&this.ctx.state==="suspended")this.ctx.resume()},
+now(){return this.ctx?this.ctx.currentTime:0},
+env(g,t,a,peak,dur){g.gain.setValueAtTime(0.0001,t);g.gain.linearRampToValueAtTime(peak,t+a);
+  g.gain.exponentialRampToValueAtTime(0.0001,t+dur);},
+tone(f,dur,type,vol,slideTo,delay){if(!this.ctx||!this.on)return;const t=this.now()+(delay||0);
+  const o=this.ctx.createOscillator(),g=this.ctx.createGain();o.type=type||"sine";o.frequency.setValueAtTime(f,t);
+  if(slideTo)o.frequency.exponentialRampToValueAtTime(slideTo,t+dur);
+  this.env(g,t,0.008,vol||.12,dur);o.connect(g);g.connect(this.ctx.destination);o.start(t);o.stop(t+dur+.05);
+  return()=>{try{o.stop()}catch(e){}};},
+_blipT:0,_tickT:0,
+blip(f){const n=Date.now();if(n-this._blipT<250)return;this._blipT=n;this.tone(f||880,.09,"sine",.08)},
+confirm(){this.tone(660,.1,"sine",.1);this.tone(990,.14,"sine",.1,null,.09)},
+error(){this.tone(220,.2,"square",.07);this.tone(160,.25,"square",.07,null,.12)},
+tick(){const n=Date.now();if(n-this._tickT<250)return;this._tickT=n;this.tone(1200,.04,"square",.04)},
+scanRise(dur){if(!this.ctx||!this.on)return;const t=this.now();
+  const o=this.ctx.createOscillator(),g=this.ctx.createGain();o.type="sine";
+  o.frequency.setValueAtTime(300,t);o.frequency.exponentialRampToValueAtTime(2400,t+dur);
+  this.env(g,t,.05,.1,dur);o.connect(g);g.connect(this.ctx.destination);o.start(t);o.stop(t+dur+.05);
+  return()=>{try{o.stop()}catch(e){}};},
+encryptBurst(){if(!this.ctx||!this.on)return;for(let i=0;i<8;i++)this.tone(400+Math.random()*1600,.05,"square",.035,null,i*.045)},
+boom(){if(!this.ctx||!this.on)return;const t=this.now();
+  const o=this.ctx.createOscillator(),g=this.ctx.createGain();o.type="sine";
+  o.frequency.setValueAtTime(90,t);o.frequency.exponentialRampToValueAtTime(28,t+.9);
+  this.env(g,t,.01,.5,1.1);o.connect(g);g.connect(this.ctx.destination);o.start(t);o.stop(t+1.2);
+  const len=this.ctx.sampleRate*.5,buf=this.ctx.createBuffer(1,len,this.ctx.sampleRate),d=buf.getChannelData(0);
+  for(let i=0;i<len;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/len,2);
+  const s=this.ctx.createBufferSource(),g2=this.ctx.createGain(),f=this.ctx.createBiquadFilter();
+  f.type="lowpass";f.frequency.value=900;s.buffer=buf;g2.gain.value=.5;
+  s.connect(f);f.connect(g2);g2.connect(this.ctx.destination);s.start(t);},
+sting(){[523,659,784,1046].forEach((f,i)=>this.tone(f,.35,"triangle",.09,null,i*.13))},
+/* muted low-square alarm: 220Hz, 150ms on/off x3, lowpass 800Hz (brief §6) */
+alarm(){if(!this.ctx||!this.on)return;const t0=this.now();
+  const f=this.ctx.createBiquadFilter();f.type="lowpass";f.frequency.value=800;f.connect(this.ctx.destination);
+  for(let i=0;i<3;i++){const t=t0+i*.32;
+    const o=this.ctx.createOscillator(),g=this.ctx.createGain();o.type="square";o.frequency.value=220;
+    g.gain.setValueAtTime(.0001,t);g.gain.linearRampToValueAtTime(.1,t+.015);
+    g.gain.setValueAtTime(.1,t+.15);g.gain.linearRampToValueAtTime(.0001,t+.17);
+    o.connect(g);g.connect(f);o.start(t);o.stop(t+.2);}},
+humStart(){if(!this.ctx||this.humNodes||!this.on)return;const t=this.now();
+  const o=this.ctx.createOscillator(),g=this.ctx.createGain();o.type="sine";o.frequency.value=55;g.gain.value=.018;
+  const o2=this.ctx.createOscillator(),g2=this.ctx.createGain();o2.type="sine";o2.frequency.value=110.3;g2.gain.value=.008;
+  o.connect(g);g.connect(this.ctx.destination);o2.connect(g2);g2.connect(this.ctx.destination);
+  o.start(t);o2.start(t);this.humNodes={o,o2,g,g2};},
+humStop(){if(!this.humNodes)return;const t=this.now(),h=this.humNodes;
+  h.g.gain.linearRampToValueAtTime(.0001,t+.4);h.g2.gain.linearRampToValueAtTime(.0001,t+.4);
+  setTimeout(()=>{try{h.o.stop();h.o2.stop()}catch(e){}},600);this.humNodes=null;},
+/* robotic formant-ish speech: vowel formants on a sawtooth carrier */
+speak(text){if(!this.ctx||!this.on)return;
+  const F={a:[730,1090,2440],e:[530,1840,2480],i:[270,2290,3010],o:[570,840,2410],u:[300,870,2240],
+           y:[270,2290,3010]};
+  const t0=this.now()+.05;let t=t0;const car=this.ctx.createOscillator(),cg=this.ctx.createGain();
+  car.type="sawtooth";car.frequency.value=95;cg.gain.value=0;
+  const bws=[this.ctx.createBiquadFilter(),this.ctx.createBiquadFilter(),this.ctx.createBiquadFilter()];
+  bws.forEach((b,i)=>{b.type="bandpass";b.Q.value=9;car.connect(b);b.connect(cg)});
+  cg.connect(this.ctx.destination);car.start(t0);
+  const chars=(" "+text.toLowerCase()+" ").replace(/[^a-z ]/g,"");
+  for(const ch of chars){
+    if(ch===" "){t+=.12;continue}
+    const dur=.11+Math.random()*.04;
+    if(F[ch]){const f=F[ch];bws.forEach((b,i)=>b.frequency.setValueAtTime(f[i],t));
+      cg.gain.setValueAtTime(.0001,t);cg.gain.linearRampToValueAtTime(.22,t+.02);
+      cg.gain.setValueAtTime(.22,t+dur-.02);cg.gain.linearRampToValueAtTime(.0001,t+dur);}
+    else{ /* consonant: short noise burst + glottal pulse */
+      cg.gain.setValueAtTime(.0001,t);cg.gain.linearRampToValueAtTime(.08,t+.01);
+      cg.gain.linearRampToValueAtTime(.0001,t+.05);}
+    t+=dur;
+  }
+  cg.gain.linearRampToValueAtTime(.0001,t+.05);car.stop(t+.3);
+  /* vibrato for robotic feel */
+  const lfo=this.ctx.createOscillator(),lg=this.ctx.createGain();
+  lfo.frequency.value=7;lg.gain.value=4;lfo.connect(lg);lg.connect(car.frequency);lfo.start(t0);lfo.stop(t+.3);}
+};
+/* ---------------- STATE ---------------- */
+const NAMES=["NIGHTJAR","VESPER","HALCYON","SABLE","MERIDIAN","KITE","OBSIDIAN","TALLOW","WRAITH","JUNIPER"];
+const RANKS=[["RECRUIT",0],["FIELD AGENT",40],["OPERATIVE",110],["SENIOR OPERATIVE",220],["SHADOW",400]];
+const S={
+  codename:store.get("codename",null),xp:store.get("xp",0),
+  stats:Object.assign({missions:0,decrypted:0,replies:0,designations:0,hacks:0,codeWins:0,laserWins:0,locks:0},
+    store.get("stats",{})),
+  sound:store.get("sound",true),hum:store.get("hum",false),
+  missions:store.get("missions",{}),
+};
+if(!S.codename){S.codename=NAMES[Math.floor(Math.random()*NAMES.length)];store.set("codename",S.codename)}
+function rank(){let r=RANKS[0];for(const x of RANKS)if(S.xp>=x[1])r=x;return r}
+function addXP(n){const before=rank()[0];S.xp+=n;store.set("xp",S.xp);
+  if(rank()[0]!==before){AU.sting();toast("⬆ CLEARANCE UPGRADED","Now rated <b>"+rank()[0]+"</b>");updateHeaderStats();}}
+function saveStats(){store.set("stats",S.stats)}
+function updStat(k,n){S.stats[k]=(S.stats[k]||0)+(n||1);saveStats();checkMissions();updateHeaderStats();}
+/* ---------------- TOASTS ---------------- */
+function toast(title,html,ms,silent){const box=$("#toasts");const el=document.createElement("div");
+  el.className="toast";el.innerHTML="<div><b>"+title+"</b><div style='color:var(--mut);margin-top:3px'>"+(html||"")+"</div></div><div class='x'>✕</div>";
+  el.querySelector(".x").onclick=e=>{e.stopPropagation();el.remove()};
+  box.appendChild(el);if(!silent)AU.blip(720);
+  setTimeout(()=>{el.style.opacity="0";el.style.transition="opacity .5s";setTimeout(()=>el.remove(),500)},ms||6000);
+  while(box.children.length>3)box.firstChild.remove();}
+const INTEL=[["📡 INTERCEPT","Chatter spike on the eastern grid. Nothing actionable — yet."],
+ ["🛰 SAT SWEEP","Thermal anomaly near dock sector. Flagged for review."],
+ ["🔐 CIPHER DESK","New one-time pad issued. Burn the old one."],
+ ["👁 FIELD NOTE","A contact left a dead drop marker near the market."],
+ ["📡 INTERCEPT","Encrypted burst traffic on channel 7. Logged."],
+ ["🛰 SAT SWEEP","Convoy movement detected on the northern corridor."],
+ ["🔐 CIPHER DESK","Handler rotation scheduled. Stay sharp."]];
+setInterval(()=>{if($("#app").style.display==="flex"&&!document.hidden&&Math.random()<.6){
+  const i=INTEL[Math.floor(Math.random()*INTEL.length)];toast(i[0],i[1],7000,true);}},75000);
+/* ---------------- CLOCK ---------------- */
+setInterval(()=>{const d=new Date();$("#clock").textContent=
+  String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0");},5000);
+/* =====================================================================
+   BOOT SEQUENCE
+   ===================================================================== */
+const BOOT_LINES=[
+ ["GHOSTLINE secure kernel v7.3.1","ok"],["mounting encrypted volume ...",""],
+ ["crypto engine: AES-256-GCM <span class='ok'>READY</span>",""],["spoofing device fingerprint ...",""],
+ ["satellite uplink handshake <span class='ok'>LOCKED</span>",""],["purging local traces ...",""],
+ ["field kit integrity <span class='ok'>VERIFIED</span>",""],["<span class='warn'>WARNING:</span> civilian network detected — running dark",""]];
+const seenBoot=store.get("seenBoot",false);
+const BOOT_SEQ=seenBoot?BOOT_LINES.slice(0,3):BOOT_LINES;
+let bi=0,bootDone=false,initFired=false;
+function bootStep(){if(bootDone)return;$("#bootLog").style.opacity="1";
+  if(bi<BOOT_SEQ.length){const[txt]=BOOT_SEQ[bi];
+    $("#bootLog").innerHTML+="<div>> "+txt+"</div>";AU.tick();bi++;
+    setTimeout(bootStep,seenBoot?260:420+Math.random()*380);}
+  else bootReady();}
+function bootReady(){if(bootDone)return;bootDone=true;store.set("seenBoot",true);
+  $("#initBtn").classList.add("ready");}
+$("#boot").addEventListener("click",()=>{if(bootDone)return; /* tap anywhere to skip */
+  $("#bootLog").innerHTML=BOOT_SEQ.map(l=>"<div>> "+l[0]+"</div>").join("");bi=BOOT_SEQ.length;bootReady();});
+$("#initBtn").onclick=()=>{
+  if(initFired)return;initFired=true;
+  AU.init();AU.resume();AU.on=S.sound;
+  if(S.hum)AU.humStart();
+  AU.confirm();
+  $("#boot").style.transition="opacity .6s";$("#boot").style.opacity="0";
+  setTimeout(()=>{$("#boot").style.display="none";startAuth();},620);
+};
+/* =====================================================================
+   BIOMETRIC AUTH
+   ===================================================================== */
+(function drawPrint(){const svg=$("#printSVG");let h="";
+  for(let r=8;r<68;r+=7){for(let a=0;a<3;a++){const s=a*120+r*9,l=s+78;
+    h+="<path d='M "+(73+r*Math.cos(s*Math.PI/180)).toFixed(1)+" "+(73+r*Math.sin(s*Math.PI/180)).toFixed(1)+
+    " A "+r+" "+r+" 0 0 1 "+(73+r*Math.cos(l*Math.PI/180)).toFixed(1)+" "+(73+r*Math.sin(l*Math.PI/180)).toFixed(1)+
+    "' fill='none' stroke='rgba(0,230,195,.55)' stroke-width='2.4'/>"}}
+  svg.innerHTML=h;})();
+let holdStart=0;
+function startAuth(){$("#auth").style.display="flex";AU.blip(520);
+  const HOLD=seenBoot?1200:2200; /* returning operatives get a quick verify */
+  if(seenBoot)$("#authHint").innerHTML="TRUSTED SESSION — QUICK VERIFY<br>HOLD UNTIL THE RING COMPLETES";
+  const wrap=$("#printWrap"),msg=$("#authMsg"),ring=$("#ringFg"),scan=$("#scanline");
+  const C=565;let raf=null,scanH=null,finished=false;
+  const stopTone=()=>{if(scanH){try{scanH()}catch(e){}scanH=null}};
+  wrap.addEventListener("touchstart",start,{passive:false});
+  wrap.addEventListener("touchend",cancel);wrap.addEventListener("touchcancel",cancel);
+  wrap.addEventListener("mousedown",start);wrap.addEventListener("mouseup",cancel);
+  wrap.addEventListener("mouseleave",cancel);
+  function upd(){const p=Math.min(1,(Date.now()-holdStart)/HOLD);
+    ring.style.strokeDashoffset=C*(1-p);
+    scan.style.opacity="1";scan.style.top=(10+p*80)+"%";
+    if(p>=1){finish();return}raf=requestAnimationFrame(upd)}
+  function start(e){e.preventDefault();AU.resume();holdStart=Date.now();
+    msg.textContent="SCANNING...";msg.style.color="var(--cyan)";
+    stopTone();scanH=AU.scanRise(HOLD/1000);upd();}
+  function cancel(){if(raf)cancelAnimationFrame(raf);raf=null;stopTone();
+    if($("#authMsg").textContent==="SCANNING..."){$("#authMsg").textContent="PRESS & HOLD TO SCAN";
+      $("#authMsg").style.color="var(--teal)";ring.style.strokeDashoffset=C;scan.style.opacity="0";}}
+  function finish(){if(finished)return;finished=true;
+    if(raf)cancelAnimationFrame(raf);stopTone();AU.confirm();
+    msg.textContent="IDENTITY CONFIRMED — WELCOME, "+S.codename;msg.style.color="var(--teal)";
+    scan.style.opacity="0";ring.style.stroke="var(--teal)";
+    wrap.removeEventListener("touchstart",start);wrap.removeEventListener("touchend",cancel);
+    wrap.removeEventListener("mousedown",start);wrap.removeEventListener("mouseup",cancel);
+    setTimeout(enterApp,1400);}
+}
+/* =====================================================================
+   APP SHELL + TABS
+   ===================================================================== */
+/* 5 tabs per the brief: Ops (dossier+missions), Comms, Map (tracker+surveillance), Gadgets, Terminal */
+const TABS=[
+ {id:"ops",ic:"🎯",label:"OPS"},
+ {id:"comms",ic:"💬",label:"COMMS"},
+ {id:"map",ic:"🗺",label:"TRACKER"},
+ {id:"gadgets",ic:"⚙️",label:"GADGETS"},
+ {id:"term",ic:"⌨️",label:"TERMINAL"},
+];
+let curTab=null;
+/* laser loop handles (assigned by initLaser) so showTab/visibility can gate it */
+let laserStart=null,laserStop=null,laserRAFState=()=>null;
+let enteredApp=false;
+function enterApp(){
+  if(enteredApp)return;enteredApp=true;
+  $("#auth").style.display="none";
+  $("#app").style.display="flex";
+  const tb=$("#tabbar");
+  TABS.forEach(t=>{const b=document.createElement("button");b.className="ttab"+(t.danger?" danger":"");
+    b.dataset.tab=t.id;b.innerHTML="<div class='ic'>"+t.ic+"</div>"+t.label;
+    b.onclick=()=>{AU.blip(700);showTab(t.id)};tb.appendChild(b);});
+  buildOps();buildDossier();buildComms();buildMap();buildCams();buildGadgets();buildKill();buildTerm();
+  showTab("ops");
+  $("#sndBtn").textContent=S.sound?"🔊":"🔇";
+  setTimeout(()=>toast("📥 INCOMING TRANSMISSION","The handler left you <b>4 messages</b>. Decrypt them in COMMS."),2500);
+}
+function showTab(id){curTab=id;
+  $$("#tabbar .ttab").forEach(b=>b.classList.toggle("active",b.dataset.tab===id));
+  $$("#screen .tab").forEach(t=>t.classList.toggle("active",t.id==="tab-"+id));
+  if(id==="map"){startMap();startFeeds();}
+  if(id==="gadgets"&&laserStart)laserStart();
+  if(id!=="map"){stopMap();stopFeeds();}
+  if(id!=="gadgets"&&laserStop)laserStop();
+  const ab=$("#tabbar").querySelector(".ttab.active");
+  if(ab&&ab.scrollIntoView)ab.scrollIntoView({inline:"center",block:"nearest"});
+  $("#screen").scrollTop=0;}
+document.addEventListener("visibilitychange",()=>{
+  if(document.hidden){stopFeeds();stopMap();if(laserStop)laserStop();}
+  else if(curTab)showTab(curTab); /* restart this tab's loops on return */
+});
+function mkTab(id,html){const d=document.createElement("div");d.className="tab";d.id="tab-"+id;d.innerHTML=html;
+  $("#screen").appendChild(d);return d;}
+$("#sndBtn").onclick=e=>{e.stopPropagation();S.sound=!S.sound;AU.on=S.sound;store.set("sound",S.sound);
+  $("#sndBtn").textContent=S.sound?"🔊":"🔇";
+  if(S.sound){AU.init();AU.resume();AU.confirm();if(S.hum)AU.humStart();}else AU.humStop();};
+function updateHeaderStats(){/* stats live on the ops tab; refresh if visible */
+  if(curTab==="ops")buildDossier();}
+/* =====================================================================
+   DOSSIER (lives inside the OPS tab)
+   ===================================================================== */
+function buildDossier(){
+  const el=$("#opsDossier");if(!el)return;
+  const r=rank(),next=RANKS[RANKS.indexOf(r)+1];
+  const pct=next?Math.min(100,Math.round(S.xp/next[1]*100)):100;
+  const files=store.get("classified",[]);
+  el.innerHTML=
+   "<div class='panel' id='agentCard'><div class='ptitle'>OPERATIVE PROFILE</div>"+
+   "<div id='agentSigil'>◈</div><div id='codenameBig'>"+S.codename+"</div>"+
+   "<div id='clearLvl'>◈ "+r[0]+" ◈</div>"+
+   "<div style='font-size:10px;color:var(--dim);letter-spacing:.2em;margin-top:8px'>FIELD XP "+S.xp+(next?" / "+next[1]:" — MAX")+"</div>"+
+   "<div class='bar'><i style='width:"+pct+"%'></i></div></div>"+
+   "<div class='panel'><div class='ptitle'>SERVICE RECORD</div>"+
+   "<div class='statGrid'>"+
+   stat(S.stats.missions,"MISSIONS") + stat(S.stats.decrypted,"DECRYPTED")+
+   stat(S.stats.designations,"DESIGNATED")+ stat(S.stats.hacks,"HACKS")+
+   stat(S.stats.codeWins,"CODE BREAKS")+ stat(S.stats.laserWins,"GRID BYPASS")+
+   "</div></div>"+
+   "<div class='panel'><div class='ptitle'>CLASSIFIED FILES <span style='color:var(--dim)'>("+files.length+")</span></div>"+
+   (files.length?files.map(f=>"<div class='kv'><b>"+f.t+"</b><span>"+f.d+"</span></div>").join(""):
+    "<div class='hint'>No classified files recovered. Win CODE BREAKER in the terminal to unlock one.</div>")+
+   "</div>"+
+   "<div class='hint'>Everything on this device is simulated field theater. No real systems are touched.</div>";
+  function stat(n,l){return "<div class='stat'><div class='n'>"+n+"</div><div class='l'>"+l+"</div></div>"}
+}
+/* =====================================================================
+   ENCRYPTED COMMS
+   ===================================================================== */
+const MSGS=[
+ {from:"HANDLER — “CONTROL”",t:"02:14",read:false,clear:"Package is in play. Courier arrives at the north dock, 0300. Confirm eyes on the manifest before it moves."},
+ {from:"HANDLER — “CONTROL”",t:"04:47",read:false,clear:"The safehouse on Mercer went quiet. Assume compromised. Do NOT make contact until I say so."},
+ {from:"CIPHER DESK",t:"06:02",read:false,clear:"One-time pad rotated. New cipher key: VESPER-9. Burn the previous key after reading."},
+ {from:"HANDLER — “CONTROL”",t:"07:30",read:false,clear:"Good work on the intercept. Stand by for the next drop — and keep your head down, {CODENAME}."},
+];
+const REPLIES=["Copy that. Eyes open.","Understood. Going dark.","Package acknowledged.","Standing by for the drop."];
+const HANDLER_REPLIES=["Acknowledged. Keep the channel quiet.","Copy. Stay dark out there.",
+ "Logged. No further traffic tonight.","Understood. The night is yours."];
+function msgClear(m){return m.clear.replace("{CODENAME}",S.codename)}
+function scramble(s){const c="█▓▒░<>/\\|#%@&";let o="";for(const ch of s)o+=ch===" "?" ":c[Math.floor(Math.random()*c.length)];return o}
+function buildComms(){
+  let el=$("#tab-comms");if(!el)el=mkTab("comms","");
+  const saved=store.get("commsRead",[]);
+  MSGS.forEach((m,i)=>{if(saved.includes(i))m.read=true});
+  renderComms();
+}
+function renderComms(){
+  const el=$("#tab-comms");
+  let h="<div class='panel'><div class='ptitle'>ENCRYPTED COMMS <span style='color:var(--dim)'>— TAP TO DECRYPT</span></div><div id='msgList'>";
+  MSGS.forEach((m,i)=>{
+    h+="<div class='msg"+(m.read?"":" unread")+"' data-i='"+i+"'>"+
+      "<div class='mh'><span>"+m.from+"</span><span>"+(m.read?"<span class='badge'>READ</span>":"<span class='badge new'>NEW</span>")+" "+m.t+"</span></div>"+
+      "<div class='body mono' id='msgbody"+i+"'>"+(m.read?msgClear(m):scramble(msgClear(m)))+"</div>"+
+      (m.read?"":"<div class='hint'>◈ TAP MESSAGE TO DECRYPT ◈</div>")+
+      "</div>";});
+  h+="</div><div id='replyZone'></div></div>";
+  el.innerHTML=h;
+  $$("#msgList .msg").forEach(m=>m.onclick=()=>decryptMsg(+m.dataset.i));
+  const rz=$("#replyZone");
+  if(MSGS.some(m=>m.read)){
+    rz.innerHTML="<div class='ptitle' style='margin-top:6px'>QUICK REPLY <span style='color:var(--dim)'>(ENCRYPTED BURST)</span></div>"+
+      REPLIES.map((r,i)=>"<button class='chip' data-r='"+i+"'>"+r+"</button>").join("");
+    rz.querySelectorAll(".chip").forEach(c=>c.onclick=()=>sendReply(REPLIES[+c.dataset.r]));
+  }
+}
+function decryptMsg(i){
+  const m=MSGS[i];if(m.read||m.decrypting)return;m.decrypting=true;
+  AU.encryptBurst();const body=$("#msgbody"+i);const target=msgClear(m);let step=0;
+  const total=target.length,iv=setInterval(()=>{
+    step+=Math.ceil(total/14);
+    let shown=target.slice(0,Math.min(step,total));
+    let rest="";for(let k=shown.length;k<total;k++)rest+=target[k]===" "?" ": "█▓▒░"[Math.floor(Math.random()*4)];
+    body.textContent=shown+rest;
+    if(step>=total){clearInterval(iv);body.textContent=target;m.read=true;m.decrypting=false;
+      const saved=store.get("commsRead",[]);saved.push(i);store.set("commsRead",saved);
+      updStat("decrypted");AU.confirm();renderComms();}
+  },90);
+}
+let replyBusy=false;
+function sendReply(text){
+  if(replyBusy)return;replyBusy=true;setTimeout(()=>{replyBusy=false},3000);
+  AU.encryptBurst();
+  const list=$("#msgList");
+  const d=document.createElement("div");d.className="msg sent";
+  d.innerHTML="<div class='mh'><span>YOU → HANDLER</span><span class='badge'>SENT</span></div>"+
+    "<div class='body mono' style='color:var(--cyan)'>"+scramble(text)+"</div>";
+  list.appendChild(d);d.scrollIntoView({behavior:"smooth",block:"nearest"});
+  while(list.children.length>50)list.firstChild.remove();
+  updStat("replies");
+  setTimeout(()=>{AU.blip(980);
+    const r=document.createElement("div");r.className="msg";
+    r.innerHTML="<div class='mh'><span>HANDLER — “CONTROL”</span><span class='badge'>READ</span></div>"+
+      "<div class='body'>"+HANDLER_REPLIES[Math.floor(Math.random()*HANDLER_REPLIES.length)]+"</div>";
+    list.appendChild(r);
+    while(list.children.length>50)list.firstChild.remove();
+    toast("💬 HANDLER REPLY","New message from CONTROL.");},2600);
+}
+/* =====================================================================
+   SURVEILLANCE FEEDS
+   ===================================================================== */
+const FEEDS=[
+ {name:"DRONE CAM — SECTOR 4",locked:false},
+ {name:"DRONE CAM — DOCKS",locked:false},
+ {name:"SAT UPLINK — THERMAL",locked:false},
+];
+let feedRAF=null,feedT=0;
+function buildCams(){
+  const host=$("#tab-map");if(!host)return; /* surveillance nests inside the TRACKER tab */
+  const d=document.createElement("div");d.className="panel";
+  d.innerHTML="<div class='ptitle'>LIVE SURVEILLANCE <span style='color:var(--dim)'>(SIMULATED)</span></div>"+
+   "<div class='seg' id='palSeg'><button data-p='day' class='on'>DAY</button><button data-p='night'>NIGHT</button><button data-p='thermal'>THERMAL</button></div>"+
+   "<div class='hint'>TAP A FEED TO TOGGLE TRACKING LOCK</div><div id='feeds'></div>";
+  host.appendChild(d);
+  const fw=$("#feeds");
+  FEEDS.forEach((f,i)=>{const w=document.createElement("div");w.className="feedWrap";
+    w.innerHTML="<canvas width='340' height='150'></canvas>"+
+     "<i class='cb tl'></i><i class='cb tr'></i><i class='cb bl'></i><i class='cb br'></i>"+
+     "<div class='feedTag' id='ftag"+i+"'><span class='rec'></span>"+f.name+" <span class='live'>● LIVE</span></div>";
+    w.onclick=()=>{f.locked=!f.locked;AU.confirm();updStat("locks");
+      $("#ftag"+i).classList.toggle("locked",f.locked);
+      $("#ftag"+i).innerHTML="<span class='rec'></span>"+f.name+" <span class='live'>● LIVE</span>"+(f.locked?" — ◉ LOCK":"");};
+    fw.appendChild(w);});
+  $("#palSeg").querySelectorAll("button").forEach(b=>b.onclick=()=>{
+    $("#palSeg").querySelectorAll("button").forEach(x=>x.classList.remove("on"));b.classList.add("on");
+    document.body.classList.remove("nightvis","thermal");AU.blip(600);
+    if(b.dataset.p==="night")document.body.classList.add("nightvis");
+    if(b.dataset.p==="thermal")document.body.classList.add("thermal");});
+}
+/* white-hot thermal ramp, rendered procedurally in-canvas (no sepia filter) */
+function heat(t){t=Math.max(0,Math.min(1,t));
+  const S=[[8,10,30],[58,22,112],[172,32,42],[236,112,26],[250,198,72],[255,255,242]];
+  const x=t*(S.length-1),k=Math.min(S.length-2,Math.floor(x)),f=x-k,a=S[k],b=S[k+1];
+  return "rgb("+Math.round(a[0]+(b[0]-a[0])*f)+","+Math.round(a[1]+(b[1]-a[1])*f)+","+Math.round(a[2]+(b[2]-a[2])*f)+")";}
+function startFeeds(){
+  if(feedRAF)return;
+  const cvs=$$("#feeds canvas"),ctxs=cvs.map(cv=>cv.getContext("2d")),W=340,H=150;
+  const scenes=cvs.map((cv,i)=>({
+    figs:Array.from({length:3},()=>({x:Math.random()*W,y:100+Math.random()*26,v:.22+Math.random()*.55,s:.8+Math.random()*.45,ph:Math.random()*7})),
+    cars:Array.from({length:5},()=>({x:Math.random()*W,lane:Math.random()<.5?0:1,sp:1.6+Math.random()*2.6})),
+    winLit:Array.from({length:30},()=>Math.random()<.55),
+    ts:"",tsT:0}));
+  let lastT=0;
+  function draw(ts){feedRAF=requestAnimationFrame(draw);
+    const now=(typeof ts==="number")?ts:Date.now();
+    const dt=lastT?Math.min(.1,(now-lastT)/1000):1/60;lastT=now;feedT+=dt;
+    const thermal=document.body.classList.contains("thermal");
+    const night=document.body.classList.contains("nightvis");
+    cvs.forEach((cv,i)=>{const g=ctxs[i],sc=scenes[i];
+      /* sky */
+      const gr=g.createLinearGradient(0,0,0,H);
+      if(thermal){gr.addColorStop(0,heat(.03));gr.addColorStop(1,heat(.09));}
+      else if(night){gr.addColorStop(0,"#05080e");gr.addColorStop(1,"#0a0f16");}
+      else{gr.addColorStop(0,"#0c1420");gr.addColorStop(1,"#141d29");}
+      g.fillStyle=gr;g.fillRect(0,0,W,H);
+      /* rooftop skyline: two drifting layers with lit windows */
+      for(let l=0;l<2;l++){
+        const baseY=H-44-l*24,off=(feedT*(7+l*8)+i*173)%92;
+        for(let k=-1;k<9;k++){
+          const bx=k*46-off+((i*31+l*17)%23),bh=24+(((k*37+i*13+l*7)%30+30)%30);
+          g.fillStyle=thermal?heat(.10+l*.05):(night?"#0b1119":"#101823");
+          g.fillRect(bx,baseY-bh,40,bh);
+          for(let wy=0;wy<3;wy++)for(let wx=0;wx<3;wx++){
+            const lit=sc.winLit[(((k*9+wy*3+wx+l*5+i*3)%30)+30)%30];
+            g.fillStyle=thermal?(lit?heat(.55):heat(.18)):
+              (lit?(night?"rgba(160,220,190,.5)":"rgba(255,205,120,.55)"):"rgba(255,255,255,.06)");
+            g.fillRect(bx+6+wx*11,baseY-bh+6+wy*8,5,4);
+          }
+        }
+      }
+      /* road with vehicle light streaks */
+      const roadY=H-28;
+      g.fillStyle=thermal?heat(.14):"#070a0f";g.fillRect(0,roadY,W,H-roadY);
+      g.fillStyle=thermal?heat(.3):"rgba(0,230,195,.14)";g.fillRect(0,roadY,W,1);
+      sc.cars.forEach(c=>{c.x+=c.sp*dt*26*(c.lane?-1:1);
+        if(c.x>W+34)c.x=-34;if(c.x<-34)c.x=W+34;
+        const y=roadY+7+c.lane*11;
+        if(thermal){g.fillStyle=heat(.92);g.fillRect(c.x-15,y,30,3);}
+        else{g.fillStyle="rgba(8,12,17,.95)";g.fillRect(c.x-7,y-5,14,6);
+          g.fillStyle=c.lane?"rgba(255,90,90,.95)":"rgba(255,244,210,.95)";
+          g.fillRect(c.x+(c.lane?-9:7),y-2,4,3);g.fillRect(c.x+(c.lane?5:-11),y-2,4,3);}
+      });
+      /* walking figures — humanoid, not boxes */
+      sc.figs.forEach(f=>{f.x+=f.v*dt*34;if(f.x>W+18){f.x=-18;f.y=100+Math.random()*26;}
+        const x=f.x,y=f.y,s=f.s,ph=f.ph+feedT*5.2;
+        const col=thermal?heat(.8):(night?"rgba(190,230,205,.85)":"rgba(200,220,235,.85)");
+        g.fillStyle=col;
+        g.beginPath();g.arc(x,y-15*s,3.6*s,0,7);g.fill(); /* head */
+        g.beginPath(); /* tapered torso */
+        g.moveTo(x-4.4*s,y-11*s);g.lineTo(x+4.4*s,y-11*s);
+        g.lineTo(x+3*s,y+3*s);g.lineTo(x-3*s,y+3*s);g.closePath();g.fill();
+        g.strokeStyle=col;g.lineCap="round";g.lineWidth=2.8*s;
+        const s1=Math.sin(ph)*3.4*s,s2=Math.sin(ph+Math.PI)*3.4*s;
+        g.beginPath();g.moveTo(x-1.6*s,y+3*s);g.lineTo(x-1.6*s+s1,y+13*s);g.stroke();
+        g.beginPath();g.moveTo(x+1.6*s,y+3*s);g.lineTo(x+1.6*s+s2,y+13*s);g.stroke();
+        g.lineWidth=2.1*s;
+        g.beginPath();g.moveTo(x-3.6*s,y-9*s);g.lineTo(x-4.6*s+s2*.6,y+1*s);g.stroke();
+        g.beginPath();g.moveTo(x+3.6*s,y-9*s);g.lineTo(x+4.6*s+s1*.6,y+1*s);g.stroke();
+      });
+      /* faint dust — subtle, not a grain storm; no scanlines */
+      g.fillStyle=thermal?"rgba(255,255,255,.05)":"rgba(255,255,255,.035)";
+      for(let n=0;n<22;n++)g.fillRect(Math.random()*W,Math.random()*H,1,1);
+      /* tracking reticle */
+      const f0=FEEDS[i];
+      if(f0.locked){const t0=sc.figs[0],cx=t0.x,cy=t0.y-4;
+        g.strokeStyle="#ff3b4e";g.lineWidth=1.5;
+        const r=24+Math.sin(feedT*5)*3;
+        g.beginPath();g.arc(cx,cy,r,0,7);g.stroke();
+        g.beginPath();g.moveTo(cx-r-8,cy);g.lineTo(cx-r+6,cy);g.moveTo(cx+r-6,cy);g.lineTo(cx+r+8,cy);
+        g.moveTo(cx,cy-r-8);g.lineTo(cx,cy-r+6);g.moveTo(cx,cy+r-6);g.lineTo(cx,cy+r+8);g.stroke();
+        g.fillStyle="#ff3b4e";g.font="10px monospace";g.fillText("TRACKING",cx-r,cy-r-10);}
+      else{g.strokeStyle="rgba(0,230,195,.5)";g.lineWidth=1;
+        g.strokeRect(W/2-20,H/2-20,40,40);
+        g.beginPath();g.moveTo(W/2-28,H/2);g.lineTo(W/2-14,H/2);g.moveTo(W/2+14,H/2);g.lineTo(W/2+28,H/2);
+        g.moveTo(W/2,H/2-28);g.lineTo(W/2,H/2-14);g.moveTo(W/2,H/2+14);g.lineTo(W/2,H/2+28);g.stroke();}
+      /* timestamp, cached at 1 Hz */
+      if(feedT-sc.tsT>1){sc.ts=new Date().toISOString().substr(11,8);sc.tsT=feedT;}
+      g.fillStyle=thermal?"rgba(255,255,255,.75)":"rgba(255,255,255,.6)";g.font="9px monospace";
+      g.fillText(sc.ts+" // SIM",8,H-8);
+    });}
+  draw();
+}
+function stopFeeds(){if(feedRAF){cancelAnimationFrame(feedRAF);feedRAF=null}}
+/* =====================================================================
+   TRACKER MAP
+   ===================================================================== */
+const TARGETS=[
+ {alias:"“FERRYMAN”",threat:"HIGH",last:"Dock sector, pier 9",x:70,y:250},
+ {alias:"“LANTERN”",threat:"MODERATE",last:"Market district",x:180,y:120},
+ {alias:"“HALO”",threat:"LOW",last:"North corridor",x:260,y:200},
+ {alias:"“CINDER”",threat:"HIGH",last:"Rail yard east",x:120,y:80},
+ {alias:"“MOTH”",threat:"MODERATE",last:"Harbor approach",x:300,y:280},
+];
+let mapRAF=null,mapT=0,priorityIdx=store.get("priority",-1);
+function buildMap(){
+  let el=$("#tab-map");if(!el)el=mkTab("map","");
+  el.innerHTML="<div class='panel'><div class='ptitle'>TARGET TRACKER <span style='color:var(--dim)'>(SIMULATED)</span></div>"+
+   "<div style='position:relative'><svg id='mapSVG' viewBox='0 0 360 340'></svg><div id='sweep'></div><div id='sweepCore'></div>"+
+   "<i class='cb tl'></i><i class='cb tr'></i><i class='cb bl'></i><i class='cb br'></i></div>"+
+   "<div class='hint'>TAP A BLIP FOR DOSSIER. MARK ONE AS PRIORITY.</div></div>"+
+   "<div class='panel hidden' id='blipCard'><div class='ptitle'>TARGET DOSSIER</div><div id='blipInfo'></div>"+
+   "<button class='btn teal' id='desigBtn'>◎ DESIGNATE PRIORITY</button>"+
+   "<button class='btn ghost small' id='blipClose'>DISMISS</button></div>";
+  drawMapStatic();
+  $("#blipClose").onclick=()=>{$("#blipCard").classList.add("hidden");AU.blip(500)};
+  $("#desigBtn").onclick=()=>{const i=+$("#desigBtn").dataset.i;
+    priorityIdx=i;store.set("priority",i);AU.sting();updStat("designations");addXP(25);
+    toast("◎ PRIORITY DESIGNATED","Target "+TARGETS[i].alias+" is now priority one.");
+    $("#blipCard").classList.add("hidden");};
+}
+function drawMapStatic(){
+  const s=$("#mapSVG");let h="<defs><pattern id='grid' width='30' height='30' patternUnits='userSpaceOnUse'>"+
+   "<path d='M30 0H0V30' fill='none' stroke='rgba(0,230,195,.12)' stroke-width='1'/></pattern></defs>";
+  h+="<rect width='360' height='340' fill='url(#grid)'/>";
+  /* roads */
+  h+="<path d='M0 170 H360 M180 0 V340' stroke='rgba(0,230,195,.25)' stroke-width='3'/>";
+  h+="<path d='M0 60 H360 M0 280 H360 M90 0 V340 M270 0 V340' stroke='rgba(0,230,195,.1)' stroke-width='1.5'/>";
+  /* river */
+  h+="<path d='M300 0 Q 260 120 320 200 Q 340 260 300 340' stroke='rgba(53,199,255,.35)' stroke-width='10' fill='none'/>";
+  h+="<text x='12' y='24' fill='rgba(124,135,148,.8)' font-size='9' letter-spacing='3'>SECTOR GRID // SIMULATED</text>";
+  TARGETS.forEach((t,i)=>{h+="<g class='blip' data-i='"+i+"' id='blip"+i+"'>"+
+    "<circle r='14' fill='none' stroke='"+(i===priorityIdx?"#ff3b4e":"#00e6c3")+"' stroke-width='1.5' opacity='.8'>"+
+    (i===priorityIdx?"":"<animate attributeName='r' values='10;16;10' dur='2s' repeatCount='indefinite'/>")+"</circle>"+
+    "<circle r='4' fill='"+(i===priorityIdx?"#ff3b4e":"#00e6c3")+"'/>"+
+    (i===priorityIdx?"<text y='-18' text-anchor='middle' fill='#ff3b4e' font-size='9'>PRIORITY</text>":"")+"</g>";});
+  s.innerHTML=h;
+  s.querySelectorAll(".blip").forEach(b=>b.onclick=e=>{e.stopPropagation();openBlip(+b.dataset.i)});
+}
+function openBlip(i){const t=TARGETS[i];AU.blip(880);
+  $("#blipInfo").innerHTML="<div class='kv'><b>ALIAS</b><span>"+t.alias+"</span></div>"+
+   "<div class='kv'><b>THREAT</b><span style='color:"+(t.threat==="HIGH"?"var(--red)":t.threat==="MODERATE"?"var(--amber)":"var(--grn)")+"'>"+t.threat+"</span></div>"+
+   "<div class='kv'><b>LAST KNOWN</b><span>"+t.last+"</span></div>"+
+   "<div class='kv'><b>STATUS</b><span>"+(i===priorityIdx?"◎ PRIORITY TARGET":"UNDER OBSERVATION")+"</span></div>";
+  $("#desigBtn").dataset.i=i;
+  $("#desigBtn").textContent=i===priorityIdx?"◎ PRIORITY CONFIRMED":"◎ DESIGNATE PRIORITY";
+  $("#blipCard").classList.remove("hidden");}
+function startMap(){if(mapRAF)return;
+  function tick(){mapRAF=requestAnimationFrame(tick);mapT+=.016;
+    TARGETS.forEach((t,i)=>{const g=$("#blip"+i);if(!g)return;
+      const x=t.x+Math.sin(mapT*.3+i*2)*22, y=t.y+Math.cos(mapT*.23+i*1.4)*18;
+      g.setAttribute("transform","translate("+x.toFixed(1)+","+y.toFixed(1)+")");});}
+  tick();}
+function stopMap(){if(mapRAF){cancelAnimationFrame(mapRAF);mapRAF=null}}
+/* =====================================================================
+   GADGETS
+   ===================================================================== */
+function buildGadgets(){
+  let el=$("#tab-gadgets");if(!el)el=mkTab("gadgets","");
+  el.innerHTML=
+  "<div class='panel'><div class='ptitle'>GADGET BAY</div>"+
+  /* EMP */
+  "<div class='ptitle' style='color:var(--amber)'>⚡ EMP PULSE</div>"+
+  "<button class='btn' id='empBtn' style='min-height:76px;border-color:rgba(255,179,71,.5);color:var(--amber)'>HOLD TO CHARGE</button>"+
+  "<div class='bar'><i id='empBar' style='width:0%;background:linear-gradient(90deg,var(--amber),var(--red))'></i></div>"+
+  /* night vision */
+  "<div class='ptitle' style='color:var(--grn);margin-top:14px'>🌙 NIGHT-VISION MODE</div>"+
+  "<button class='btn' id='nvBtn'>NIGHT VISION: OFF</button>"+
+  /* voice modulator */
+  "<div class='ptitle' style='color:var(--cyan);margin-top:14px'>🎙 VOICE SCRAMBLER</div>"+
+  "<div id='voxBtns'>"+
+   ["Package secured.","Eyes on target.","Going dark.","Rendezvous at midnight."].map(p=>
+    "<button class='chip' data-p='"+p+"'>▶ "+p+"</button>").join("")+"</div>"+
+  "<div class='hint'>Deliberately unintelligible cipher voice — 100% procedural, no audio files.</div>"+
+  /* ambient hum */
+  "<div class='ptitle' style='margin-top:14px'>🔊 AMBIENT HUM</div>"+
+  "<button class='btn' id='humBtn'>AMBIENT HUM: "+(S.hum?"ON":"OFF")+"</button>"+
+  "</div>"+
+  /* laser grid */
+  "<div class='panel'><div class='ptitle'>🔷 LASER-GRID BYPASS <span style='color:var(--dim)'>(MINIGAME)</span></div>"+
+  "<div class='hint'>Tap the ARMED node before the timer runs out. Clear 5 rounds.</div>"+
+  "<canvas id='laserCv' width='340' height='260'></canvas>"+
+  "<div class='row'><button class='btn teal' id='laserStart'>START BYPASS</button></div>"+
+  "<div class='mono' id='laserMsg' style='text-align:center;font-size:12px;letter-spacing:.2em;color:var(--mut);min-height:22px'></div></div>";
+
+  /* --- EMP hold to charge --- */
+  const emp=$("#empBtn"),bar=$("#empBar");let et=null,ep=0,etone=null;
+  const stopETone=()=>{if(etone){try{etone()}catch(e){}etone=null}};
+  const estart=e=>{e.preventDefault();AU.resume();ep=0;
+    if(et){clearInterval(et);et=null}stopETone(); /* re-tap guard: never stack charges */
+    etone=AU.tone(120,1.6,"sawtooth",.06,900);
+    et=setInterval(()=>{ep+=4;bar.style.width=Math.min(100,ep)+"%";
+      emp.textContent="CHARGING "+Math.min(100,Math.round(ep))+"%";
+      if(ep>=100){clearInterval(et);et=null;fireEMP();}},60);};
+  const ecancel=()=>{stopETone();if(et&&ep<100){clearInterval(et);et=null;bar.style.width="0%";
+    emp.textContent="HOLD TO CHARGE";AU.error();}};
+  emp.addEventListener("touchstart",estart,{passive:false});
+  emp.addEventListener("touchend",ecancel);emp.addEventListener("touchcancel",ecancel);
+  emp.addEventListener("mousedown",estart);emp.addEventListener("mouseup",ecancel);
+  function fireEMP(){et=null;bar.style.width="100%";emp.textContent="⚡ DISCHARGED";
+    const f=$("#flash");f.style.transition="none";f.style.opacity="1";
+    setTimeout(()=>{f.style.transition="opacity 1.2s";f.style.opacity="0"},60);
+    AU.boom();setTimeout(()=>AU.boom(),350);
+    if(navigator.vibrate)navigator.vibrate(80);
+    setTimeout(()=>{ /* fake reboot */
+      const r=$("#reboot");r.style.display="flex";AU.tone(200,.8,"sine",.08,60);
+      let p=0;const iv=setInterval(()=>{p+=8;$("#rebootBar").style.width=p+"%";
+        $("#rebootMsg").textContent=["REROUTING POWER","RESTARTING CRYPTO CORE","REACQUIRING UPLINK","SYSTEMS NOMINAL"][Math.min(3,Math.floor(p/28))];
+        if(p>=100){clearInterval(iv);setTimeout(()=>{r.style.display="none";
+          $("#rebootBar").style.width="0%";bar.style.width="0%";emp.textContent="HOLD TO CHARGE";
+          toast("⚡ EMP AFTERMATH","All systems rebooted. The grid never saw it coming.");},500);}},220);
+    },900);}
+  /* --- night vision --- */
+  const nv=$("#nvBtn");
+  const setNV=v=>{document.body.classList.toggle("nv",v);nv.textContent="NIGHT VISION: "+(v?"ON":"OFF");
+    store.set("nv",v);if(v)AU.confirm();};
+  nv.onclick=()=>setNV(!document.body.classList.contains("nv"));
+  if(store.get("nv",false))setNV(true);
+  /* --- voice modulator --- */
+  $("#voxBtns").querySelectorAll(".chip").forEach(c=>c.onclick=()=>{AU.resume();AU.speak(c.dataset.p);
+    toast("🎙 SCRAMBLED","Broadcasting cipher: “"+c.dataset.p+"”");});
+  /* --- ambient hum --- */
+  $("#humBtn").onclick=()=>{S.hum=!S.hum;store.set("hum",S.hum);
+    $("#humBtn").textContent="AMBIENT HUM: "+(S.hum?"ON":"OFF");
+    if(S.hum){AU.init();AU.resume();AU.humStart()}else AU.humStop();AU.blip(700);};
+  initLaser();
+}
+/* --- LASER GRID minigame (rAF gated to the gadgets tab via laserStart/laserStop) --- */
+function initLaser(){
+  const cv=$("#laserCv"),g=cv.getContext("2d");
+  let nodes=[],round=0,target=-1,timeLeft=0,playing=false,raf=null,t=0,lastT=0;
+  function reset(){nodes=Array.from({length:6},()=>({x:40+Math.random()*260,y:40+Math.random()*180,
+    vx:(Math.random()-.5)*2.4,vy:(Math.random()-.5)*2.4}));}
+  function draw(ts){raf=requestAnimationFrame(draw);
+    const now=(typeof ts==="number")?ts:Date.now(); /* timestamp-delta: frame-rate independent */
+    const dt=lastT?Math.min(.1,(now-lastT)/1000):1/60;lastT=now;t+=dt;
+    g.clearRect(0,0,340,260);
+    /* laser lines */
+    g.strokeStyle="rgba(255,59,78,.25)";g.lineWidth=1;
+    for(let i=0;i<nodes.length;i++)for(let j=i+1;j<nodes.length;j++){
+      g.beginPath();g.moveTo(nodes[i].x,nodes[i].y);g.lineTo(nodes[j].x,nodes[j].y);g.stroke();}
+    nodes.forEach((n,i)=>{n.x+=n.vx*dt*60;n.y+=n.vy*dt*60;
+      if(n.x<16||n.x>324)n.vx*=-1;if(n.y<16||n.y>244)n.vy*=-1;
+      const armed=i===target;
+      g.fillStyle=armed?"#ff3b4e":(playing?"rgba(0,230,195,.7)":"rgba(124,135,148,.5)");
+      g.beginPath();g.arc(n.x,n.y,armed?13+Math.sin(t*10)*3:10,0,7);g.fill();
+      if(armed){g.strokeStyle="#fff";g.lineWidth=2;g.beginPath();g.arc(n.x,n.y,18,0,7);g.stroke();}});
+    if(playing){timeLeft-=dt;
+      g.fillStyle="#fff";g.font="11px monospace";
+      g.fillText("ROUND "+(round+1)+"/5   "+Math.max(0,timeLeft).toFixed(1)+"s",12,18);
+      if(timeLeft<=0)lose();}}
+  function nextRound(){round++;if(round>5){win();return}
+    target=Math.floor(Math.random()*nodes.length);timeLeft=Math.max(1.6,3.4-round*.4);
+    $("#laserMsg").textContent="ROUND "+round+" OF 5 — TAP THE RED NODE";AU.blip(700+round*80);}
+  function win(){playing=false;cancelAnimationFrame(raf);raf=null;
+    $("#laserMsg").textContent="✓ GRID BYPASSED";$("#laserMsg").style.color="var(--grn)";
+    AU.sting();updStat("laserWins");addXP(30);
+    toast("🔷 BYPASS COMPLETE","Laser grid neutralized. +30 XP.");}
+  function lose(){playing=false;cancelAnimationFrame(raf);raf=null;
+    $("#laserMsg").textContent="✗ ALARM TRIPPED — TRY AGAIN";$("#laserMsg").style.color="var(--red)";
+    AU.error();}
+  cv.addEventListener("pointerdown",e=>{if(!playing)return;
+    const r=cv.getBoundingClientRect();
+    const x=(e.clientX-r.left)*(340/r.width),y=(e.clientY-r.top)*(260/r.height);
+    const n=nodes[target],d=Math.hypot(n.x-x,n.y-y);
+    if(d<30){AU.confirm();nextRound();}else{AU.error();timeLeft-=.5;}});
+  $("#laserStart").onclick=()=>{reset();round=0;playing=true;lastT=0;
+    $("#laserMsg").style.color="var(--mut)";
+    if(raf){cancelAnimationFrame(raf);raf=null}
+    nextRound();draw();};
+  reset();
+  laserStart=()=>{if(raf)return;lastT=0;draw();};
+  laserStop=()=>{if(raf){cancelAnimationFrame(raf);raf=null}};
+  laserRAFState=()=>raf;
+}
+/* =====================================================================
+   HACKING TERMINAL
+   ===================================================================== */
+function buildTerm(){
+  let el=$("#tab-term");if(!el)el=mkTab("term","");
+  el.innerHTML=
+  "<div class='panel'><div class='ptitle'>SECURE TERMINAL <span style='color:var(--dim)'>(SIMULATED)</span></div>"+
+  "<div id='termOut' class='mono'></div>"+
+  "<div id='termRow'><input id='termIn' class='mono' placeholder='type command…' autocomplete='off' autocapitalize='off' spellcheck='false' maxlength='40'>"+
+  "<button class='btn small teal' id='termGo' style='width:76px;margin:0'>RUN</button></div>"+
+  "<div class='hint'>Try: help · breach · trace · decrypt · scan · clear</div></div>"+
+  "<div class='panel'><div class='ptitle'>🔓 CODE BREAKER <span style='color:var(--dim)'>(MEMORY SEQUENCE)</span></div>"+
+  "<div class='hint'>Watch the sequence, then repeat it. Survive 3 rounds to unlock a CLASSIFIED FILE.</div>"+
+  "<div id='codePads'></div>"+
+  "<div class='row'><button class='btn teal' id='codeStart'>START SEQUENCE</button></div>"+
+  "<div class='mono' id='codeMsg' style='text-align:center;font-size:12px;letter-spacing:.2em;color:var(--mut);min-height:22px'></div></div>";
+  const out=$("#termOut");
+  termPrint("GHOSTLINE secure shell — all activity is simulated theater.","d");
+  termPrint("Type <span class='p'>help</span> for commands.","d");
+  const run=()=>{const v=$("#termIn").value.trim();$("#termIn").value="";if(v)termCmd(v);$("#termIn").focus();};
+  $("#termGo").onclick=run;
+  $("#termIn").addEventListener("keydown",e=>{if(e.key==="Enter")run();});
+  initCode();
+}
+function termPrint(html,cls){const out=$("#termOut");const d=document.createElement("div");
+  if(cls)d.className=cls;d.innerHTML=html;out.appendChild(d);
+  while(out.children.length>80)out.firstChild.remove();
+  out.scrollTop=out.scrollHeight;}
+function termProgress(label,done){return new Promise(res=>{
+  const out=$("#termOut");const d=document.createElement("div");d.className="c";
+  out.appendChild(d);let p=0;
+  const iv=setInterval(()=>{p+=4+Math.random()*9;
+    if(p>=100){p=100;clearInterval(iv);d.innerHTML=label+" ["+"█".repeat(20)+"] 100% ✓";AU.confirm();setTimeout(res,250);return}
+    const n=Math.round(p/5);d.innerHTML=label+" ["+"█".repeat(n)+"░".repeat(20-n)+"] "+Math.round(p)+"%";
+    if(Math.random()<.4)AU.tick();out.scrollTop=out.scrollHeight;},110);});}
+let termBusy=false;
+const termCd={}; /* per-command XP cooldowns — no infinite farming */
+function termGate(cmd,secs){const n=Date.now();
+  if(termCd[cmd]&&n-termCd[cmd]<secs*1000){
+    termPrint("<span class='w'>UPLINK RECHARGING</span> — "+cmd+" needs "+
+      Math.ceil((secs*1000-(n-termCd[cmd]))/1000)+"s to cool down.","w");
+    AU.error();return false;}
+  termCd[cmd]=n;return true;}
+async function termCmd(raw){
+  if(termBusy){termPrint("<span class='e'>LINK BUSY</span> — one operation at a time, operative.","e");AU.error();return;}
+  termBusy=true;
+  try{
+  termPrint("<span class='p'>ghost@umbra7</span>:~$ "+raw.replace(/</g,"&lt;"));
+  const[cmd,...args]=raw.toLowerCase().split(/\s+/);
+  const tgt=(args[0]||"node-7").toUpperCase();
+  switch(cmd){
+   case "help":termPrint("COMMANDS:","w");
+    termPrint("  <span class='p'>breach [target]</span> — infiltrate a node");
+    termPrint("  <span class='p'>trace</span> — trace a hostile signal");
+    termPrint("  <span class='p'>decrypt</span> — crack an intercepted file");
+    termPrint("  <span class='p'>scan</span> — sweep local network");
+    termPrint("  <span class='p'>whoami / status / clear</span>");break;
+   case "breach":if(!termGate("breach",60))break;
+    termPrint("Targeting <span class='w'>"+tgt+"</span> …","w");
+    await termProgress("injecting payload");await termProgress("escalating privileges");
+    await termProgress("exfiltrating");termPrint("✓ BREACH COMPLETE — 2.4MB exfiltrated (simulated).","p");
+    AU.sting();updStat("hacks");addXP(20);break;
+   case "trace":if(!termGate("trace",60))break;
+    termPrint("Triangulating hostile signal…","w");
+    await termProgress("hop 1 — relay mask");await termProgress("hop 2 — sat bounce");
+    await termProgress("hop 3 — origin lock");termPrint("✓ SIGNAL ORIGIN: <span class='e'>dock sector, pier 9</span> (simulated).","p");
+    AU.confirm();updStat("hacks");addXP(15);break;
+   case "decrypt":if(!termGate("decrypt",60))break;
+    await termProgress("brute-forcing cipher");
+    termPrint("✓ FILE DECRYPTED: <span class='c'>“the ferryman moves at dawn”</span> (simulated).","p");
+    AU.confirm();updStat("hacks");addXP(15);break;
+   case "scan":await termProgress("sweeping subnet");
+    termPrint("6 nodes found. 2 vulnerable. 0 friendly. (simulated)","w");AU.blip(700);break;
+   case "whoami":termPrint("operative <span class='p'>"+S.codename+"</span> — clearance "+rank()[0],"p");break;
+   case "status":termPrint("uptime 99.98% · uplink LOCKED · traces PURGED · cover INTACT","c");break;
+   case "override":termPrint("Nice try. Override requires CONTROL authorization.","e");AU.error();break;
+   case "selfdestruct":termPrint("Denied. Use the big red button like everyone else.","e");AU.error();break;
+   case "hello":termPrint("The night is quiet. Too quiet.","d");break;
+   case "open sesame":termPrint("The vault was empty. It always is.","d");break;
+   case "clear":$("#termOut").innerHTML="";break;
+   default:termPrint("unknown command: <span class='e'>"+cmd.replace(/</g,"&lt;")+"</span> — try <span class='p'>help</span>","e");AU.error();
+  }
+  }finally{termBusy=false;}
+}
+/* --- CODE BREAKER (Simon) --- */
+function initCode(){
+  const names=["ALPHA","BRAVO","CHARLIE","DELTA"],freqs=[330,415,494,587];
+  let seq=[],pos=0,round=0,accept=false,seqToken=0; /* token cancels stale playSeq on re-tap */
+  const pads=$("#codePads");
+  names.forEach((n,i)=>{const b=document.createElement("button");b.className="pad";b.textContent=n;
+    b.onclick=()=>press(i);pads.appendChild(b);});
+  const msg=$("#codeMsg"),btns=[...pads.children];
+  function lit(i,dur){return new Promise(r=>{btns[i].classList.add("lit");AU.tone(freqs[i],.28,"triangle",.12);
+    setTimeout(()=>{btns[i].classList.remove("lit");setTimeout(r,90)},dur||320)});}
+  async function playSeq(my){accept=false;msg.textContent="WATCH…";msg.style.color="var(--cyan)";
+    await new Promise(r=>setTimeout(r,700));
+    for(const s of seq){if(my!==seqToken)return;await lit(s);}
+    if(my!==seqToken)return;
+    pos=0;accept=true;msg.textContent="YOUR TURN — REPEAT "+seq.length;msg.style.color="var(--teal)";}
+  async function press(i){if(!accept)return;const my=seqToken;await lit(i,180);
+    if(my!==seqToken)return;
+    if(i===seq[pos]){pos++;
+      if(pos===seq.length){round++;accept=false;
+        if(round>=4){win();}else{seq.push(Math.floor(Math.random()*4));
+          msg.textContent="✓ ROUND "+round+" — EXTENDING";AU.confirm();
+          setTimeout(()=>{if(my===seqToken)playSeq(my)},900);}}}
+    else{accept=false;msg.textContent="✗ SEQUENCE BROKEN — RETRY";msg.style.color="var(--red)";
+      AU.error();setTimeout(()=>{if(my!==seqToken)return;round=0;seq=[];msg.textContent="PRESS START";},1600);}}
+  function win(){msg.textContent="✓ VAULT CRACKED";msg.style.color="var(--grn)";
+    AU.sting();updStat("codeWins");addXP(50);
+    const files=store.get("classified",[]);
+    if(!files.some(f=>f.t==="FILE 7 — FERRYMAN")){files.push({t:"FILE 7 — FERRYMAN",d:"unlocked "+new Date().toLocaleDateString()});store.set("classified",files);}
+    toast("🔓 CLASSIFIED FILE UNLOCKED","FILE 7 — FERRYMAN added to your dossier.");}
+  $("#codeStart").onclick=()=>{seqToken++;const my=seqToken;
+    seq=[Math.floor(Math.random()*4)];round=1;AU.blip(600);playSeq(my);};
+}
+/* =====================================================================
+   MISSIONS (OPS)
+   ===================================================================== */
+const MISSIONS=[
+ {id:"m1",name:"FIRST CONTACT",desc:"Establish the handler channel.",
+  objs:[["Decrypt 3 handler messages",()=>S.stats.decrypted>=3],["Send an encrypted reply",()=>S.stats.replies>=1]],xp:40},
+ {id:"m2",name:"GHOST CIRCUIT",desc:"Prove your fieldcraft in the digital arena.",
+  objs:[["Win CODE BREAKER (terminal)",()=>S.stats.codeWins>=1],["Bypass the laser grid (gadgets)",()=>S.stats.laserWins>=1]],xp:60},
+ {id:"m3",name:"EYES ON",desc:"Build the target picture.",
+  objs:[["Designate a priority target (tracker)",()=>S.stats.designations>=1],["Lock a tracking reticle (cams)",()=>S.stats.locks>=1]],xp:50},
+];
+function buildOps(){
+  let el=$("#tab-ops");if(!el)el=mkTab("ops","");
+  el.innerHTML="<div id='opsDossier'></div><div id='opsMissions'></div>";
+  renderOps();
+}
+function renderOps(){
+  const el=$("#opsMissions");if(!el)return;
+  let h="<div class='panel'><div class='ptitle'>ACTIVE OPERATIONS</div>";
+  MISSIONS.forEach(m=>{
+    const complete=!!S.missions[m.id];
+    h+="<div class='panel mission"+(complete?" done":"")+"' style='margin-bottom:10px'>"+
+     "<div class='ptitle' style='color:"+(complete?"var(--grn)":"var(--cyan)")+"'>"+(complete?"✓ ":"")+m.name+"</div>"+
+     "<div class='hint' style='margin:0 0 6px'>"+m.desc+" — reward "+m.xp+" XP</div>"+
+     m.objs.map(o=>"<div class='obj"+(o[1]()?" hit":"")+"'><div class='box'>"+(o[1]()?"✓":"")+"</div>"+o[0]+"</div>").join("")+
+     "</div>";});
+  h+="</div><div class='hint'>Objectives complete automatically as you use the kit. Finished missions bank XP toward your next clearance rank.</div>";
+  el.innerHTML=h;
+}
+/* completions are evaluated on every objective state-change (via updStat),
+   regardless of which tab is visible — the payoff is never deferred */
+function checkMissions(){
+  let hit=false;
+  MISSIONS.forEach(m=>{if(S.missions[m.id])return;
+    if(m.objs.every(o=>o[1]())){S.missions[m.id]=true;hit=true;
+      S.stats.missions=(S.stats.missions||0)+1;addXP(m.xp);
+      setTimeout(()=>{AU.sting();toast("🎯 MISSION COMPLETE",m.name+" — +"+m.xp+" XP. Clearance progress banked.");},400);}});
+  if(hit){store.set("missions",S.missions);saveStats();updateHeaderStats();}
+  if(curTab==="ops")renderOps();
+}
+/* =====================================================================
+   SELF-DESTRUCT (pure theater — the drill reveal lands AFTER the countdown)
+   ===================================================================== */
+let killBuilt=false;
+function buildKill(){
+  if(killBuilt)return;killBuilt=true;
+  const host=$("#tab-gadgets");if(!host)return; /* final option lives in GADGETS */
+  const pane=document.createElement("div");pane.innerHTML=
+   "<div class='panel' id='killPane'>"+
+   "<div class='ptitle' style='color:var(--red)'>⚠ FINAL OPTION ⚠</div>"+
+   "<div class='hint' style='margin-bottom:4px'>DEVICE ZEROIZATION PROTOCOL<br><b style='color:var(--red)'>IRREVERSIBLE — NO RECOVERY</b></div>"+
+   "<button id='killBtn'>HOLD<br>3 SEC<br><svg id='killRing' viewBox='0 0 190 190'><circle cx='95' cy='95' r='93' stroke='rgba(255,59,78,.15)' stroke-width='5' fill='none'/><circle id='killFg' cx='95' cy='95' r='93'/></svg></button>"+
+   "<div class='hint'>PRESS AND HOLD FOR 3 SECONDS TO ARM</div></div>";
+  host.appendChild(pane);
+  const btn=$("#killBtn"),fg=$("#killFg"),C=584;let iv=null,sdIv=null,count=10,ktone=null;
+  btn.addEventListener("touchstart",start,{passive:false});
+  btn.addEventListener("touchend",cancel);btn.addEventListener("touchcancel",cancel);
+  btn.addEventListener("mousedown",start);btn.addEventListener("mouseup",cancel);
+  const stopKTone=()=>{if(ktone){try{ktone()}catch(e){}ktone=null}};
+  function start(e){e.preventDefault();AU.resume();let p=0;
+    if(iv){clearInterval(iv);iv=null}stopKTone(); /* re-tap guard: never stack arms */
+    ktone=AU.tone(150,3,"sawtooth",.08,600);
+    iv=setInterval(()=>{p+=100/50;fg.style.strokeDashoffset=C*(1-Math.min(1,p/100));
+      if(p>=100){clearInterval(iv);iv=null;armSD();}},60);}
+  function cancel(){stopKTone();
+    if(iv){clearInterval(iv);iv=null;fg.style.strokeDashoffset=C;AU.error();}}
+  function armSD(){const o=$("#sdOverlay");o.style.display="flex";o.classList.add("alarm");
+    if(sdIv)clearInterval(sdIv);
+    count=10;$("#sdCount").textContent=count;
+    $("#sdMsg").textContent="EVACUATE THE AREA";
+    AU.alarm();
+    sdIv=setInterval(()=>{count--;$("#sdCount").textContent=count;
+      if(count<=0){clearInterval(sdIv);sdIv=null;drillDone();}},1000);}
+  $("#sdAbort").onclick=()=>{if(sdIv){clearInterval(sdIv);sdIv=null}AU.confirm();
+    $("#sdOverlay").style.display="none";$("#sdOverlay").classList.remove("alarm");
+    fg.style.strokeDashoffset=C;toast("🛑 SEQUENCE ABORTED","Zeroization cancelled. Device intact.");};
+  function drillDone(){const o=$("#sdOverlay");o.classList.remove("alarm");
+    $("#sdCount").textContent="✓";$("#sdCount").style.fontSize="64px";$("#sdCount").style.color="var(--grn)";
+    $("#sdMsg").innerHTML="DRILL COMPLETE — THIS WAS A TEST.<br>NO DATA WAS HARMED. NICE NERVES, "+S.codename+".";
+    $("#sdAbort").textContent="STAND DOWN";
+    AU.sting();addXP(10);
+    setTimeout(()=>{o.style.display="none";
+      $("#sdCount").textContent="10";$("#sdCount").style.fontSize="96px";$("#sdCount").style.color="var(--red)";
+      $("#sdAbort").textContent="ABORT SEQUENCE";fg.style.strokeDashoffset=C;
+      toast("🎖 DRILL LOGGED","Self-destruct drill completed. +10 XP for nerve.");},4500);}
+}
+/* ---------------- BOOT ---------------- */
+window.addEventListener("load",()=>{setTimeout(bootStep,500)});
+document.addEventListener("dblclick",e=>e.preventDefault(),{passive:false});
+document.addEventListener("gesturestart",e=>e.preventDefault());
+</script>
+</body>
+</html>
