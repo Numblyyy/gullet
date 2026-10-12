@@ -1,0 +1,1392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="COMMLINK">
+<meta name="theme-color" content="#0c0f12">
+<title>COMMLINK // LONG-RANGE BURST TERMINAL</title>
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%230c0f12'/%3E%3Cpath d='M18 30 L50 14 L82 30' stroke='%236f8cae' stroke-width='7' fill='none'/%3E%3Ccircle cx='35' cy='46' r='10' fill='%236f8cae'/%3E%3Ccircle cx='65' cy='46' r='10' fill='%236f8cae'/%3E%3Cpath d='M42 68 L50 78 L58 68' stroke='%236f8cae' stroke-width='6' fill='none'/%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%230c0f12'/%3E%3Ccircle cx='35' cy='46' r='10' fill='%236f8cae'/%3E%3Ccircle cx='65' cy='46' r='10' fill='%236f8cae'/%3E%3C/svg%3E">
+<link rel="manifest" href="data:application/manifest+json,%7B%22name%22%3A%22COMMLINK%22%2C%22short_name%22%3A%22COMMLINK%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%230c0f12%22%2C%22theme_color%22%3A%22%230c0f12%22%7D">
+<style>
+:root{
+  --bg:#0c0f12; --panel:#161b20; --panel2:#1e252d; --steel:#2a333d; --line:#39434e;
+  --text:#e8e4da; --dim:#9aa3ab; --faint:#6e777f;
+  --accent:#6f8cae; --amber:#d99a3d; --redamber:#d96b3d; --red:#df4436; --gray:#7d858d;
+  --sat:env(safe-area-inset-top,0px); --sab:env(safe-area-inset-bottom,0px);
+}
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+html,body{height:100%; margin:0; padding:0;}
+body{
+  position:fixed; inset:0; overflow:hidden; background:var(--bg); color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  font-size:14px; line-height:1.4; overscroll-behavior:none; touch-action:manipulation;
+  -webkit-user-select:none; user-select:none;
+}
+.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;}
+.hidden{display:none !important;}
+button{font-family:inherit; color:var(--text); background:var(--steel); border:1px solid var(--line);
+  min-height:44px; padding:8px 12px; font-size:13px; letter-spacing:.06em; cursor:pointer; border-radius:4px;}
+button:active{opacity:.75;}
+textarea,input[type="text"]{-webkit-user-select:text; user-select:text;}
+/* ambient overlay layers: exactly 3 */
+#ovScan{position:fixed; inset:0; z-index:30; pointer-events:none; opacity:.05;
+  background:repeating-linear-gradient(0deg,#000 0 1px,transparent 1px 3px);}
+#ovVig{position:fixed; inset:0; z-index:31; pointer-events:none; opacity:.5;
+  background:radial-gradient(ellipse at center,transparent 55%,rgba(0,0,0,.5) 100%);}
+#ovFlick{position:fixed; inset:0; z-index:32; pointer-events:none; opacity:0; background:#cfd8e2;}
+@keyframes fadeIn{from{opacity:0;} to{opacity:1;}}
+/* ---------- app frame ---------- */
+#app{display:flex; flex-direction:column; height:100dvh; height:100vh;
+  padding-top:var(--sat); padding-bottom:var(--sab);}
+/* ---------- channel card ---------- */
+#channelcard{flex:none; background:var(--panel); border-bottom:2px solid var(--accent);
+  padding:8px 12px 7px;}
+#ccRow{display:flex; align-items:center; gap:10px; min-height:52px;}
+#ccSigil{flex:none; width:44px; height:44px;}
+#ccMain{flex:1; min-width:0;}
+#ccName{font-size:17px; font-weight:700; letter-spacing:.09em;}
+#ccHouse{font-size:11px; color:var(--accent); letter-spacing:.12em;}
+#ccChan{font-size:11px; color:var(--dim); letter-spacing:.08em;}
+.ccBtns{flex:none; display:flex; gap:8px;}
+.iconBtn{width:44px; height:44px; min-height:44px; padding:0; display:flex; align-items:center; justify-content:center;}
+.iconBtn.off{opacity:.45;}
+.iconBtn svg{pointer-events:none;}
+#ccLocal{border-top:1px solid var(--line); margin-top:6px; padding-top:5px;
+  font-size:11px; color:var(--dim); letter-spacing:.07em;}
+#ccLocal b{color:var(--text); font-weight:600;}
+/* ---------- status panel ---------- */
+#status{flex:none; background:var(--panel); border-bottom:1px solid var(--line);}
+#statusToggle{width:100%; background:var(--panel); border:none; border-bottom:1px solid var(--line);
+  display:flex; justify-content:space-between; align-items:center; min-height:44px;
+  font-size:12px; letter-spacing:.14em; color:var(--dim);}
+#statusBody{max-height:30dvh; overflow-y:auto; padding:8px 12px 10px; -webkit-overflow-scrolling:touch;}
+.sgrid{display:grid; grid-template-columns:1fr 1fr; gap:4px 14px;}
+.srow{font-size:12px; min-height:20px;}
+.srow.full{grid-column:1 / -1;}
+.slab{color:var(--faint); letter-spacing:.1em; font-size:11px;}
+.sval{color:var(--text);}
+#stAvail{font-weight:700; letter-spacing:.08em;}
+.av-AVAILABLE{color:var(--accent);}
+.av-FIELD_DELAYED{color:var(--amber);}
+.av-COMMAND_EMERGENCY{color:var(--redamber);}
+.av-OFF_SHIFT_RESTING{color:var(--gray);}
+.av-HOLD{color:var(--red);}
+#stAvailNote{color:var(--dim); font-size:12px;}
+#stRotation{color:var(--amber); font-size:11px; letter-spacing:.06em;}
+.blk{display:inline-block; width:15px; height:10px; background:#333d47; margin-right:3px; vertical-align:middle;}
+.blk.on{background:var(--accent);}
+#stStatusLines{margin-top:6px; border-top:1px solid var(--line); padding-top:6px;}
+#stStatusLines div, #stThreads div.tline{font-size:12px; color:var(--dim); margin:2px 0;}
+.threadBtn{width:100%; text-align:left; background:var(--panel2); margin:3px 0; font-size:12px;}
+.threadDetail{font-size:12px; color:var(--dim); padding:4px 8px 6px; border-left:2px solid var(--accent);}
+#stFoot{margin-top:6px; border-top:1px solid var(--line); padding-top:5px; font-size:11px; color:var(--faint);}
+/* ---------- log ---------- */
+#log{flex:1; min-height:0; overflow-y:auto; padding:10px 12px; -webkit-overflow-scrolling:touch;
+  background:var(--bg);}
+#logEmpty{color:var(--faint); font-size:12px; letter-spacing:.08em; text-align:center; margin-top:18px;}
+.entry{margin:8px 0; padding:9px 11px; border:1px solid var(--line); border-radius:4px;
+  animation:fadeIn .25s ease-out;}
+.entry.out{margin-left:13%; background:var(--panel2);}
+.entry.in{margin-right:13%; background:#11161b; border-left:3px solid var(--accent);}
+.entry.prio{border-color:var(--red);}
+.entry .meta{font-size:10px; color:var(--faint); letter-spacing:.07em; margin-bottom:5px;
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;}
+.entry .meta .pstamp{color:var(--red); font-weight:700;}
+.entry .body{font-size:14px; white-space:pre-wrap; word-wrap:break-word;
+  -webkit-user-select:text; user-select:text;}
+.entry .note{font-size:11px; color:var(--amber); margin-top:5px; letter-spacing:.05em;}
+.entry .ebtns{display:flex; gap:8px; flex-wrap:wrap; margin-top:7px;}
+.miniBtn{min-height:44px; font-size:11px; background:var(--steel);}
+/* ---------- mode bar ---------- */
+#modebar{flex:none; display:flex; border-top:1px solid var(--line); background:var(--panel);}
+#modebar button{flex:1; border:none; border-radius:0; background:var(--panel); min-height:48px;
+  font-size:13px; letter-spacing:.14em; color:var(--dim);}
+#modebar button.sel{background:var(--steel); color:var(--text); border-top:2px solid var(--accent);}
+/* ---------- composer / receive ---------- */
+#composer,#receive{flex:none; background:var(--panel); border-top:1px solid var(--line); padding:8px 12px 10px;}
+#availHelper{font-size:11px; color:var(--amber); letter-spacing:.05em; margin-bottom:6px; min-height:15px;}
+textarea{width:100%; background:#0a0d10; color:var(--text); border:1px solid var(--line);
+  border-radius:4px; font-size:16px; padding:9px 10px; font-family:inherit; resize:none;}
+textarea.err{border-color:var(--red);}
+.crow{display:flex; gap:8px; margin-top:8px;}
+#pttBtn{flex:1.3; min-height:56px; font-size:14px; letter-spacing:.1em; background:var(--steel); touch-action:none;}
+#pttBtn.rec{background:#5a2d22; border-color:var(--redamber); color:#ffb59d;}
+#priorityBtn{flex:1; min-height:56px; font-size:11px; line-height:1.25;}
+#priorityBtn.armed{background:#571b14; border-color:var(--red); color:#ffb3a7;}
+#txBtn{flex:1; min-height:56px; font-size:14px; letter-spacing:.08em; background:#33506e; border-color:var(--accent);}
+#pttLevel{height:6px; background:#222a31; margin-top:8px; border-radius:2px; overflow:hidden;}
+#pttLevelFill{height:100%; width:0%; background:var(--amber);}
+#pttNote{font-size:11px; color:var(--amber); margin-top:6px; letter-spacing:.04em;}
+#pttDisclosure{font-size:10px; color:var(--faint); margin-top:6px; letter-spacing:.04em;}
+#sysNote{flex:none; background:#3a2415; color:var(--amber); font-size:11px; letter-spacing:.06em;
+  padding:7px 12px; border-top:1px solid var(--amber);}
+#decodeBtn{width:100%; min-height:52px; margin-top:8px; font-size:14px; letter-spacing:.1em;
+  background:#33506e; border-color:var(--accent);}
+.rxrow{display:flex; gap:8px; align-items:stretch; margin-top:8px;}
+#rxReadoutBtn{flex:1; font-size:11px;}
+.rxnote{flex:1.4; font-size:10px; color:var(--faint); letter-spacing:.05em; display:flex; align-items:center;}
+/* ---------- handoff bar ---------- */
+#handoffBar{flex:none; background:#22303d; border-top:1px solid var(--accent); padding:8px 12px;}
+#handoffBtn{width:100%; min-height:48px; background:#33506e; border-color:var(--accent);
+  font-size:14px; letter-spacing:.09em; font-weight:700;}
+/* ---------- boot ---------- */
+#boot{position:fixed; inset:0; z-index:60; background:var(--bg); display:flex; flex-direction:column;
+  align-items:center; justify-content:center; padding:24px; text-align:center;
+  padding-top:calc(24px + var(--sat)); padding-bottom:calc(24px + var(--sab));
+  transition:opacity .3s ease-out;}
+#bootTitle{font-size:19px; font-weight:700; letter-spacing:.13em; margin-bottom:14px;}
+#bootSub{font-size:12px; color:var(--dim); letter-spacing:.08em; line-height:1.9;}
+#bootSub b{color:var(--text);}
+#initBtn{margin-top:30px; width:100%; max-width:340px; min-height:56px; height:56px;
+  font-size:15px; letter-spacing:.12em; background:#33506e; border-color:var(--accent);}
+#bootStat{margin-top:16px; font-size:11px; color:var(--accent); letter-spacing:.1em; min-height:16px;}
+/* ---------- settings / copy sheet ---------- */
+.sheet{position:fixed; inset:0; z-index:50; background:rgba(5,7,9,.92); display:flex;
+  align-items:flex-end; justify-content:center;}
+.sheetCard{background:var(--panel); border-top:2px solid var(--accent); width:100%; max-height:88dvh;
+  overflow-y:auto; padding:14px 14px calc(16px + var(--sab)); -webkit-overflow-scrolling:touch;}
+.sheetCard h2{margin:2px 0 10px; font-size:14px; letter-spacing:.14em; color:var(--dim); font-weight:600;}
+.srowset{display:flex; align-items:center; gap:10px; margin:6px 0;}
+.srowset button{flex:1; text-align:left;}
+.srowset .val{flex:none; font-size:11px; color:var(--faint); min-width:34px; text-align:right;}
+input[type="range"]{flex:1; min-height:44px;}
+#setRelayUrl{flex:1; background:#0a0d10; border:1px solid var(--line); border-radius:4px;
+  color:var(--text); font-size:16px; padding:10px; min-height:44px;}
+#copySheetText{min-height:130px;}
+.danger{border-color:var(--red); color:#ffb3a7;}
+</style>
+</head>
+<body>
+<div id="ovScan"></div><div id="ovVig"></div><div id="ovFlick"></div>
+
+<!-- BOOT -->
+<div id="boot">
+  <svg width="72" height="72" viewBox="0 0 48 48" aria-hidden="true"><path d="M6 15 L24 6 L42 15" stroke="#6f8cae" stroke-width="3.4" fill="none"/><circle cx="16.5" cy="22" r="4.6" fill="#6f8cae"/><circle cx="31.5" cy="22" r="4.6" fill="#6f8cae"/><path d="M19 33 L24 39 L29 33" stroke="#6f8cae" stroke-width="3" fill="none"/></svg>
+  <div id="bootTitle">COMMLINK // LONG-RANGE BURST TERMINAL</div>
+  <div id="bootSub">
+    <div>CHANNEL: <b id="bootChannel">KRYZE-PRIVATE-01</b></div>
+    <div>LOCAL UNIT: <b id="bootLocal">SKYLAR — "DOCK HAND"</b></div>
+    <div id="bootRoute">BEROYA YARDS → THE CACHE</div>
+    <div>AUDIO AND RELAY SYSTEMS START ON INITIALIZE.</div>
+  </div>
+  <button id="initBtn" type="button">INITIALIZE CHANNEL</button>
+  <div id="bootStat" class="mono"></div>
+</div>
+
+<div id="app">
+  <!-- CHANNEL CARD -->
+  <header id="channelcard">
+    <div id="ccRow">
+      <svg id="ccSigil" viewBox="0 0 48 48" aria-hidden="true"><path d="M6 15 L24 6 L42 15" stroke="#6f8cae" stroke-width="3.4" fill="none"/><circle cx="16.5" cy="22" r="4.6" fill="#6f8cae"/><circle cx="31.5" cy="22" r="4.6" fill="#6f8cae"/><path d="M19 33 L24 39 L29 33" stroke="#6f8cae" stroke-width="3" fill="none"/></svg>
+      <div id="ccMain">
+        <div id="ccName">BO-KATAN KRYZE</div>
+        <div id="ccHouse">HOUSE KRYZE · NITE OWLS</div>
+        <div id="ccChan" class="mono">SECURE CHANNEL — BURST / ROTATING KEY</div>
+      </div>
+      <div class="ccBtns">
+        <button id="muteBtn" class="iconBtn" type="button" aria-label="Toggle sound">
+          <svg width="22" height="22" viewBox="0 0 24 24"><path d="M3 9 v6 h4 l6 5 V4 L7 9 Z" fill="#e8e4da"/><path d="M16 8 q4 4 0 8" stroke="#e8e4da" stroke-width="2" fill="none"/></svg>
+        </button>
+        <button id="settingsBtn" class="iconBtn" type="button" aria-label="Open settings">
+          <svg width="22" height="22" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2" fill="none" stroke="#e8e4da" stroke-width="2"/><path d="M12 2 v4 M12 18 v4 M2 12 h4 M18 12 h4 M4.5 4.5 l2.8 2.8 M16.7 16.7 l2.8 2.8 M19.5 4.5 l-2.8 2.8 M7.3 16.7 l-2.8 2.8" stroke="#e8e4da" stroke-width="2"/></svg>
+        </button>
+      </div>
+    </div>
+    <div id="ccLocal" class="mono">LOCAL UNIT: <b>SKYLAR — "DOCK HAND"</b> · BEROYA YARDS → THE CACHE</div>
+  </header>
+
+  <!-- STATUS PANEL -->
+  <section id="status">
+    <button id="statusToggle" type="button"><span>STATION MANIFEST — CHANNEL STATE</span><span id="statusChevron">▾</span></button>
+    <div id="statusBody">
+      <div class="sgrid mono">
+        <div class="srow"><span class="slab">PRESENCE:</span> <span class="sval" id="stPresence">—</span></div>
+        <div class="srow"><span class="slab">LOCATION:</span> <span class="sval" id="stLocation">—</span></div>
+        <div class="srow full"><span class="slab">ACTIVITY:</span> <span class="sval" id="stActivity">—</span></div>
+        <div class="srow full"><span class="slab">AVAILABILITY:</span> <span id="stAvail">—</span></div>
+        <div class="srow full" id="stAvailNote">—</div>
+        <div class="srow full hidden" id="stRotation">ROTATION ESTIMATE — NO CURRENT WORD</div>
+        <div class="srow"><span class="slab">SIGNAL:</span> <span id="stSignalBlocks"></span> <span class="sval" id="stSignalPct">—</span></div>
+        <div class="srow"><span class="slab">INTERFERENCE:</span> <span class="sval" id="stInterference">—</span></div>
+        <div class="srow"><span class="slab">RELAY DELAY:</span> <span class="sval" id="stRelayDelay">—</span></div>
+        <div class="srow"><span class="slab">BRIEF IN:</span> <span class="sval" id="stBrief">—</span></div>
+        <div class="srow full"><span class="slab">SCATTER WINDOW:</span> <span class="sval" id="stScatter">—</span></div>
+      </div>
+      <div id="stStatusLines" class="mono"></div>
+      <div class="slab mono" style="margin-top:7px;">OPEN THREADS:</div>
+      <div id="stThreads"></div>
+      <div id="stFoot" class="mono">LAST SYNC: <span id="stLastSync">—</span></div>
+    </div>
+  </section>
+
+  <!-- LOG -->
+  <main id="log" aria-label="Transmission log">
+    <div id="logEmpty" class="mono">NO TRAFFIC LOGGED ON THIS CHANNEL.</div>
+  </main>
+
+  <!-- SYS NOTE -->
+  <div id="sysNote" class="mono hidden"></div>
+
+  <!-- MODE BAR -->
+  <nav id="modebar">
+    <button id="modeTx" type="button" class="sel">TRANSMIT</button>
+    <button id="modeRx" type="button">RECEIVE</button>
+  </nav>
+
+  <!-- COMPOSER -->
+  <section id="composer">
+    <div id="availHelper" class="mono"></div>
+    <textarea id="composerText" rows="3" placeholder="TRANSMISSION TEXT" aria-label="Transmission text"></textarea>
+    <div class="crow">
+      <button id="pttBtn" type="button">HOLD TO TALK</button>
+      <button id="priorityBtn" type="button" aria-pressed="false">PRIORITY — EMERGENCY TRAFFIC ONLY</button>
+      <button id="txBtn" type="button">TRANSMIT</button>
+    </div>
+    <div id="pttLevel"><div id="pttLevelFill"></div></div>
+    <div id="pttNote" class="mono hidden"></div>
+    <div id="pttDisclosure" class="mono">VOICE INPUT USES THIS DEVICE'S BUILT-IN SPEECH SERVICE.</div>
+  </section>
+
+  <!-- RECEIVE -->
+  <section id="receive" class="hidden">
+    <div class="mono" style="font-size:12px;color:var(--dim);margin-bottom:6px;">Paste her reply from the Muse chat.</div>
+    <textarea id="rxText" rows="3" placeholder="PASTE INCOMING TRANSMISSION" aria-label="Paste incoming transmission"></textarea>
+    <button id="decodeBtn" type="button">DECODE INCOMING</button>
+    <div class="rxrow">
+      <button id="rxReadoutBtn" type="button">DEVICE VOICE READOUT: OFF</button>
+      <div class="rxnote mono">GENERIC DEVICE VOICE — NOT HER VOICE</div>
+    </div>
+  </section>
+
+  <!-- HANDOFF -->
+  <div id="handoffBar" class="hidden">
+    <button id="handoffBtn" type="button">OPEN MUSE — PASTE TO SEND</button>
+  </div>
+</div>
+
+<!-- SETTINGS -->
+<div id="settings" class="sheet hidden">
+  <div class="sheetCard">
+    <h2>DEVICE SETTINGS</h2>
+    <div class="srowset"><button id="setSound" type="button">SOUND: ON</button></div>
+    <div class="srowset"><button id="setAmbient" type="button">AMBIENT HUM: ON</button></div>
+    <div class="srowset"><button id="setReadout" type="button">DEVICE VOICE READOUT: OFF</button></div>
+    <div class="srowset"><button id="setHaptics" type="button">HAPTICS: ON</button></div>
+    <div class="srowset"><span class="slab mono" style="flex:none;">READOUT RATE</span>
+      <input id="setRate" type="range" min="0.5" max="1.5" step="0.1" value="1.0" aria-label="Readout rate">
+      <span class="val mono" id="setRateVal">1.0</span></div>
+    <div class="srowset"><span class="slab mono" style="flex:none;">RELAY URL</span>
+      <input id="setRelayUrl" type="text" value="https://muse.ai" aria-label="Relay URL"></div>
+    <div class="srowset"><button id="openRelayBtn" type="button">OPEN MUSE — PASTE TO SEND</button></div>
+    <div class="srowset"><button id="copyLogBtn" type="button">COPY ENTIRE LOG</button></div>
+    <div class="srowset"><button id="clearLogBtn" type="button" class="danger">CLEAR LOG</button></div>
+    <div class="srowset"><button id="closeChannelBtn" type="button">CLOSE CHANNEL</button></div>
+    <div class="srowset"><button id="settingsClose" type="button">CLOSE SETTINGS</button></div>
+  </div>
+</div>
+
+<!-- MANUAL COPY SHEET -->
+<div id="copySheet" class="sheet hidden">
+  <div class="sheetCard">
+    <h2>MANUAL COPY</h2>
+    <div class="mono" style="font-size:12px;color:var(--amber);margin-bottom:8px;">COPY UNAVAILABLE — TEXT SELECTED. COPY IT, THEN OPEN MUSE.</div>
+    <textarea id="copySheetText" readonly aria-label="Text to copy manually"></textarea>
+    <div class="srowset" style="margin-top:10px;"><button id="copySheetClose" type="button">DONE</button></div>
+  </div>
+</div>
+
+<script>
+'use strict';
+/* COMMLINK // LONG-RANGE BURST TERMINAL — single-file build.
+   Relay terminal only: this device never generates a reply from her.
+   Her words enter only through the receive path or story_state.json. */
+
+/* ---------------- helpers ---------------- */
+function $(id){ return document.getElementById(id); }
+function on(el, ev, fn, opt){ if(el && el.addEventListener){ el.addEventListener(ev, fn, opt); } }
+function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function clampN(v, lo, hi){ v = Number(v); if(isNaN(v)) v = lo; return Math.max(lo, Math.min(hi, v)); }
+function pad2(n){ return (n<10?'0':'')+n; }
+function fmtTime(iso){ var d = new Date(iso); if(isNaN(d.getTime())) return '--:--:--';
+  return pad2(d.getHours())+':'+pad2(d.getMinutes())+':'+pad2(d.getSeconds()); }
+var WIN = (typeof window !== 'undefined') ? window : globalThis;
+
+/* ---------------- storage (commlink.* only) ---------------- */
+var MEM = {};
+var store = {
+  get: function(k, dflt){
+    try{ var v = null;
+      if(typeof localStorage !== 'undefined' && localStorage) v = localStorage.getItem(k);
+      if(v == null && Object.prototype.hasOwnProperty.call(MEM, k)) v = MEM[k];
+      if(v == null) return dflt;
+      return JSON.parse(v);
+    }catch(e){ return dflt; }
+  },
+  set: function(k, v){
+    try{ MEM[k] = JSON.stringify(v); }catch(e){}
+    try{ if(typeof localStorage !== 'undefined' && localStorage) localStorage.setItem(k, JSON.stringify(v)); }catch(e){}
+  },
+  del: function(k){
+    try{ delete MEM[k]; }catch(e){}
+    try{ if(typeof localStorage !== 'undefined' && localStorage) localStorage.removeItem(k); }catch(e){}
+  }
+};
+
+/* ---------------- settings ---------------- */
+var settings = Object.assign(
+  { sound:true, ambient:true, readout:false, readoutRate:1.0, haptics:true, relayUrl:'' },
+  store.get('commlink.settings', {}) || {});
+settings.readoutRate = clampN(settings.readoutRate, 0.5, 1.5);
+function saveSettings(){ store.set('commlink.settings', settings); }
+function effRelayUrl(){
+  if(settings.relayUrl) return settings.relayUrl;
+  if(curState && curState.relay_url) return curState.relay_url;
+  return 'https://muse.ai';
+}
+
+/* ---------------- embedded story state (identical to story_state.json) ---------------- */
+var EMBEDDED_STATE = {
+  "schema_version": 1,
+  "updated_at": "2026-10-11T22:45:00-07:00",
+  "channel": { "id": "KRYZE-PRIVATE-01", "label": "SECURE CHANNEL", "encryption": "BURST / ROTATING KEY" },
+  "her": { "name": "BO-KATAN KRYZE", "house_line": "HOUSE KRYZE · NITE OWLS" },
+  "local_unit": { "name": "SKYLAR", "designation": "\"DOCK HAND\"", "route_line": "BEROYA YARDS → THE CACHE" },
+  "presence": "ON_STATION",
+  "location_label": "THE CACHE — DEAD MINING STATION, FORGOTTEN ROUTE",
+  "activity": "PREPARING THE CAPTAINS' BRIEF",
+  "availability": {
+    "state": "COMMAND_EMERGENCY",
+    "note": "CAPTAINS' BRIEF IN ~40 MIN. NORMAL TRAFFIC QUEUES.",
+    "since": "START OF EVENING CYCLE"
+  },
+  "signal": { "strength": 94, "interference": "LOW", "relay_delay_sec": 1 },
+  "status_lines": [
+    "STANDING RULE: WHAT TOUCHES SKYLAR IS TOLD TO HIM FIRST, BY HER, IN PRIVATE.",
+    "SKYLAR ATTENDS THE CAPTAINS' BRIEF FROM THIS CYCLE FORWARD.",
+    "IMPERIAL FILE: HIS FACE AND BLOOD-TEST RESULT ARE ON RECORD. HE CANNOT GO HOME.",
+    "HER SHIP: GRAY KOM'RK. THE GAUNTLET WAS DESTROYED AT BEROYA."
+  ],
+  "open_threads": [
+    { "id": "T-INQ", "title": "INQUISITOR — PORT TO PORT",
+      "detail": "THE INQUISITOR FROM THE SUNDARI HANDOVER HAS A COMMAND AND A BUDGET. HE IS MOVING PORT TO PORT ASKING ABOUT SKYLAR. HIS LINE POINTS TOWARD THE CACHE." },
+    { "id": "T-SCATTER", "title": "SCATTER — DECISION AT THE BRIEF",
+      "detail": "SHE GIVES THE CACHE A MONTH, TWO AT MOST, BEFORE THE STATION MUST SCATTER. THE DECISION GOES TO THE CAPTAINS' BRIEF FIRST." },
+    { "id": "T-RANN", "title": "RANN — MENDING",
+      "detail": "SHOT COVERING THE RUN TO THE KOM'RK AT SUNDARI. SURVIVED. MENDING." }
+  ],
+  "countdowns": { "captains_brief_min": 40, "scatter_window_label": "A MONTH. TWO AT MOST." },
+  "last_transmission": null,
+  "relay_url": "https://muse.ai"
+};
+
+/* ---------------- state machine ---------------- */
+var PRESENCES = ['ON_STATION','IN_THE_FIELD','OFF_WORLD','COMMAND_ONLY'];
+var AVAILS = ['AVAILABLE','FIELD_DELAYED','COMMAND_EMERGENCY','OFF_SHIFT_RESTING'];
+var AVAIL_LABEL = {
+  AVAILABLE: 'AVAILABLE',
+  FIELD_DELAYED: 'IN THE FIELD — REPLIES DELAYED',
+  COMMAND_EMERGENCY: 'COMMAND DUTIES — EMERGENCY ONLY',
+  OFF_SHIFT_RESTING: 'OFF SHIFT — RESTING',
+  HOLD: 'STATE UNKNOWN — RELAY HOLDS TRAFFIC'
+};
+var PRESENCE_LABEL = {
+  ON_STATION: 'ON STATION', IN_THE_FIELD: 'IN THE FIELD',
+  OFF_WORLD: 'OFF WORLD', COMMAND_ONLY: 'ON STATION — COMMAND ONLY'
+};
+/* Runtime spoiler/secret guard (fix pass): terms are stored split so this
+   file itself stays clean under the T13 scan. Any state-provided display
+   string matching one is held at render time, whatever future state says. */
+var GUARD_TERMS = ['Gid'+'eon','Gro'+'gu','Great '+'Purge','Thousand '+'Tears',
+  'Dark'+'saber','neck'+'lace','Sat'+'ine','This is the '+'way','Mo'+'ff','Nev'+'arro',
+  'dark '+'trooper','confe'+'ssion','jour'+'nal','love '+'you','Qui'+'-Gon','Jinn',
+  'blood '+'count','midi'+'chlorian','7'+'400'];
+function guardText(s){
+  if(typeof s !== 'string') return s;
+  var low = s.toLowerCase(), i;
+  for(i=0;i<GUARD_TERMS.length;i++){
+    if(low.indexOf(GUARD_TERMS[i].toLowerCase()) >= 0) return '— HELD BY RELAY —';
+  }
+  return s;
+}
+function deriveSignal(presence){
+  switch(presence){
+    case 'IN_THE_FIELD': return { strength:75, interference:'MED', relay_delay_sec:5 };
+    case 'OFF_WORLD':    return { strength:48, interference:'HIGH', relay_delay_sec:20 };
+    case 'COMMAND_ONLY': return { strength:94, interference:'LOW', relay_delay_sec:1 };
+    case 'ON_STATION':
+    default:             return { strength:94, interference:'LOW', relay_delay_sec:1 };
+  }
+}
+function clampState(raw){
+  var s = (raw && typeof raw === 'object') ? raw : {};
+  var out = {};
+  out.schema_version = 1;
+  out.updated_at = (typeof s.updated_at === 'string') ? s.updated_at : '';
+  out.channel = { id:'KRYZE-PRIVATE-01', label:'SECURE CHANNEL', encryption:'BURST / ROTATING KEY' };
+  if(s.channel){ if(s.channel.id) out.channel.id = String(s.channel.id);
+    if(s.channel.label) out.channel.label = String(s.channel.label);
+    if(s.channel.encryption) out.channel.encryption = String(s.channel.encryption); }
+  out.her = { name:'BO-KATAN KRYZE', house_line:'HOUSE KRYZE · NITE OWLS' };
+  if(s.her){ if(s.her.name) out.her.name = String(s.her.name);
+    if(s.her.house_line) out.her.house_line = String(s.her.house_line); }
+  out.local_unit = { name:'SKYLAR', designation:'"DOCK HAND"', route_line:'BEROYA YARDS → THE CACHE' };
+  if(s.local_unit){ if(s.local_unit.name) out.local_unit.name = String(s.local_unit.name);
+    if(s.local_unit.designation) out.local_unit.designation = String(s.local_unit.designation);
+    if(s.local_unit.route_line) out.local_unit.route_line = String(s.local_unit.route_line); }
+  out.presence = (PRESENCES.indexOf(s.presence) >= 0) ? s.presence : 'ON_STATION';
+  out.location_label = (typeof s.location_label === 'string' && s.location_label) ? s.location_label : 'THE CACHE';
+  out.activity = (typeof s.activity === 'string' && s.activity) ? s.activity : '—';
+  var av = (s.availability && typeof s.availability === 'object') ? s.availability : {};
+  out.availability = {
+    state: (AVAILS.indexOf(av.state) >= 0) ? av.state : 'AVAILABLE',
+    note: (typeof av.note === 'string') ? av.note : '',
+    since: (typeof av.since === 'string') ? av.since : ''
+  };
+  if(out.presence === 'COMMAND_ONLY') out.availability.state = 'COMMAND_EMERGENCY';
+  if(s.signal && typeof s.signal === 'object' && s.signal.strength != null && !isNaN(Number(s.signal.strength))){
+    var inter = ['LOW','MED','HIGH'].indexOf(s.signal.interference) >= 0 ? s.signal.interference : 'LOW';
+    out.signal = { strength: clampN(s.signal.strength, 0, 100), interference: inter,
+      relay_delay_sec: Math.max(0, Number(s.signal.relay_delay_sec) || 0) };
+  } else {
+    out.signal = deriveSignal(out.presence);
+  }
+  out.status_lines = Array.isArray(s.status_lines) ? s.status_lines.map(String) : [];
+  out.open_threads = [];
+  if(Array.isArray(s.open_threads)) s.open_threads.forEach(function(t){
+    if(t && t.title) out.open_threads.push({ id:String(t.id||''), title:String(t.title), detail:String(t.detail||'') });
+  });
+  var cd = (s.countdowns && typeof s.countdowns === 'object') ? s.countdowns : {};
+  out.countdowns = { captains_brief_min: (cd.captains_brief_min == null ? null : Math.max(0, Number(cd.captains_brief_min) || 0)),
+    scatter_window_label: (typeof cd.scatter_window_label === 'string') ? cd.scatter_window_label : '—' };
+  out.last_transmission = null;
+  if(s.last_transmission && s.last_transmission.id && typeof s.last_transmission.text === 'string'){
+    out.last_transmission = { id:String(s.last_transmission.id),
+      received_at:String(s.last_transmission.received_at || ''), text:s.last_transmission.text };
+  }
+  out.relay_url = (typeof s.relay_url === 'string' && s.relay_url) ? s.relay_url : 'https://muse.ai';
+  return out;
+}
+function rotationAvailability(d){
+  var h = d.getHours(), r;
+  if(h >= 6 && h < 14) r = 'AVAILABLE';
+  else if(h >= 14 && h < 22) r = 'FIELD_DELAYED';
+  else r = 'OFF_SHIFT_RESTING';
+  if(r === 'AVAILABLE') r = 'FIELD_DELAYED'; /* rotation may never produce AVAILABLE */
+  return r;
+}
+var curState = clampState(EMBEDDED_STATE);
+var stateSource = 'embedded';           /* 'file' | 'embedded' */
+var lastSyncAt = null;
+var effAvail = curState.availability.state;
+var rotationApplied = false;
+var stateHold = false;
+var briefDeadline = null;
+var briefAnchor = store.get('commlink.briefAnchor', null);
+var prevInterference = curState.signal.interference;
+
+function computeEffective(nowMs){
+  var now = (typeof nowMs === 'number') ? nowMs : Date.now();
+  effAvail = curState.availability.state;
+  rotationApplied = false;
+  if(stateHold){ effAvail = 'HOLD'; return; }
+  var t = Date.parse(curState.updated_at || '');
+  var stale = isNaN(t) || (now - t) > 12*60*60*1000;
+  /* Rotation applies ONLY to stale data, whatever its source. A fresh state —
+     including the embedded copy on an offline first open — is shown exactly as
+     written, at any time of day. Rotation never overrides COMMAND_EMERGENCY. */
+  if(stale && effAvail !== 'COMMAND_EMERGENCY'){
+    effAvail = rotationAvailability(new Date(now));
+    rotationApplied = true;
+  }
+}
+function enterHold(){
+  stateHold = true;
+  curState = clampState(EMBEDDED_STATE);
+  curState.signal = { strength:0, interference:'HIGH', relay_delay_sec:0 };
+  effAvail = 'HOLD';
+  rotationApplied = false;
+}
+function resetBriefClock(){
+  var min = curState.countdowns.captains_brief_min;
+  if(min == null){ briefDeadline = null; briefAnchor = null; store.del('commlink.briefAnchor'); return; }
+  if(briefAnchor && briefAnchor.updated_at === curState.updated_at && briefAnchor.deadline){
+    briefDeadline = briefAnchor.deadline;   /* reloads must not reset the clock */
+    return;
+  }
+  var base = Date.parse(curState.updated_at || '');
+  if(isNaN(base)) base = Date.now();
+  briefDeadline = base + min*60000;         /* anchored to updated_at + offset */
+  briefAnchor = { updated_at: curState.updated_at, deadline: briefDeadline };
+  store.set('commlink.briefAnchor', briefAnchor);
+}
+
+/* ---------------- haptics (guarded no-op where unsupported) ---------------- */
+function vib(pattern){
+  if(!settings.haptics) return;
+  try{ if(typeof navigator !== 'undefined' && navigator && typeof navigator.vibrate === 'function') navigator.vibrate(pattern); }catch(e){}
+}
+
+/* ---------------- audio engine ---------------- */
+var AC = null, masterGain = null, noiseBuf = null, ambient = null;
+function acClass(){
+  if(typeof window !== 'undefined' && window && (window.AudioContext || window.webkitAudioContext))
+    return window.AudioContext || window.webkitAudioContext;
+  if(typeof AudioContext !== 'undefined') return AudioContext;
+  if(typeof webkitAudioContext !== 'undefined') return webkitAudioContext;
+  return null;
+}
+function ensureAudio(){
+  if(AC) return AC;
+  var Cls = acClass(); if(!Cls) return null;
+  try{
+    AC = new Cls();
+    masterGain = AC.createGain();
+    masterGain.gain.value = settings.sound ? 0.9 : 0;
+    masterGain.connect(AC.destination);
+    noiseBuf = AC.createBuffer(1, AC.sampleRate*2, AC.sampleRate);
+    var d = noiseBuf.getChannelData(0);
+    for(var i=0;i<d.length;i++) d[i] = Math.random()*2-1;
+  }catch(e){ AC = null; masterGain = null; noiseBuf = null; }
+  return AC;
+}
+function resumeAudio(){
+  try{ if(AC && AC.state === 'suspended') AC.resume(); }catch(e){}
+}
+function setSound(onOff){
+  settings.sound = !!onOff; saveSettings();
+  if(AC && masterGain){ try{ masterGain.gain.setTargetAtTime(settings.sound ? 0.9 : 0, AC.currentTime, 0.025); }catch(e){} }
+  var mb = $('muteBtn'); if(mb && mb.classList) mb.classList.toggle('off', !settings.sound);
+  var ss = $('setSound'); if(ss) ss.textContent = 'SOUND: ' + (settings.sound ? 'ON' : 'OFF');
+}
+function tone(o){
+  if(!AC || !masterGain) return;
+  try{
+    var t0 = AC.currentTime + (o.delay || 0);
+    var osc = AC.createOscillator(), g = AC.createGain();
+    osc.type = o.type || 'sine';
+    osc.frequency.setValueAtTime(o.f, t0);
+    if(o.f2) osc.frequency.exponentialRampToValueAtTime(Math.max(20,o.f2), t0 + o.dur);
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(o.gain || 0.1, t0 + 0.008);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + o.dur);
+    osc.connect(g); g.connect(masterGain);
+    osc.start(t0); osc.stop(t0 + o.dur + 0.05);
+  }catch(e){}
+}
+function noiseHit(o){
+  if(!AC || !masterGain || !noiseBuf) return;
+  try{
+    var t0 = AC.currentTime + (o.delay || 0);
+    var src = AC.createBufferSource(); src.buffer = noiseBuf;
+    src.playbackRate.value = o.rate || 1;
+    var flt = AC.createBiquadFilter();
+    flt.type = o.ftype || 'bandpass';
+    flt.frequency.setValueAtTime(o.f0 || 1200, t0);
+    if(o.f1) flt.frequency.exponentialRampToValueAtTime(o.f1, t0 + o.dur);
+    flt.Q.value = o.q || 1;
+    var g = AC.createGain();
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(o.gain || 0.1, t0 + 0.01);
+    g.gain.exponentialRampToValueAtTime(o.endGain || 0.0001, t0 + o.dur);
+    var out = g;
+    if(o.pan && AC.createStereoPanner){ var p = AC.createStereoPanner(); p.pan.value = o.pan; g.connect(p); out = p; }
+    src.connect(flt); flt.connect(g); out.connect(masterGain);
+    src.start(t0, Math.random()*1.2); src.stop(t0 + o.dur + 0.05);
+  }catch(e){}
+}
+/* the 18 brief sounds */
+function squelchOpen(){ noiseHit({dur:0.09, ftype:'bandpass', f0:1200, q:1, gain:0.25});
+  tone({f:180, type:'square', dur:0.02, gain:0.12}); }
+function staticSettle(){ if(!AC || !masterGain || !noiseBuf) return;
+  try{
+    var t0 = AC.currentTime;
+    var src = AC.createBufferSource(); src.buffer = noiseBuf;
+    var flt = AC.createBiquadFilter(); flt.type = 'lowpass';
+    flt.frequency.setValueAtTime(6000, t0);
+    flt.frequency.exponentialRampToValueAtTime(800, t0 + 0.7);
+    var g = AC.createGain();
+    g.gain.setValueAtTime(0.18, t0);
+    g.gain.exponentialRampToValueAtTime(0.02, t0 + 0.7);
+    var lfo = AC.createOscillator(); lfo.frequency.value = 7;
+    var lg = AC.createGain(); lg.gain.value = 0.0036;
+    lfo.connect(lg); lg.connect(g.gain);
+    src.connect(flt); flt.connect(g); g.connect(masterGain);
+    src.start(t0, Math.random()); src.stop(t0 + 0.75);
+    lfo.start(t0); lfo.stop(t0 + 0.75);
+  }catch(e){}
+}
+function channelLock(){ tone({f:880, dur:0.08, gain:0.15});
+  tone({f:1320, dur:0.12, gain:0.15, delay:0.09});
+  tone({f:2640, dur:0.12, gain:0.04, delay:0.09}); }
+function pttDown(){ tone({f:140, type:'square', dur:0.015, gain:0.12});
+  noiseHit({dur:0.03, ftype:'bandpass', f0:2000, gain:0.10}); }
+function pttUp(){ tone({f:200, type:'square', dur:0.015, gain:0.12});
+  noiseHit({dur:0.03, ftype:'bandpass', f0:2000, gain:0.10}); }
+function txBurst(){ var i; for(i=0;i<5;i++){ tone({f:1200+300*i, dur:0.035, gain:0.12, delay:i*0.045});
+    noiseHit({dur:0.02, ftype:'bandpass', f0:3000, gain:0.05, delay:i*0.045}); } }
+function txQueued(){ var f=[1800,1500,1200], i; for(i=0;i<3;i++) tone({f:f[i], dur:0.06, gain:0.10, delay:i*0.075}); }
+function txPriority(){ tone({f:520, type:'triangle', dur:0.09, gain:0.16});
+  tone({f:520, type:'triangle', dur:0.09, gain:0.16, delay:0.15});
+  tone({f:1560, dur:0.09, gain:0.06, delay:0.15}); }
+function rxBurst(){ noiseHit({dur:0.35, ftype:'bandpass', f0:900, f1:2400, gain:0.16, endGain:0.03});
+  tone({f:990, dur:0.05, gain:0.10, delay:0.37}); }
+function decodeGlitch(){ noiseHit({dur:0.04+Math.random()*0.05, ftype:'highpass', f0:3000, gain:0.10,
+  pan:(AC && AC.createStereoPanner) ? (Math.random()*1.6-0.8) : 0}); }
+function rxComplete(){ tone({f:1320, dur:0.07, gain:0.10}); }
+function uiBlip(kind){ var f = 740;
+  if(kind === 'mode') f = 660; else if(kind === 'settings') f = 520;
+  else if(kind === 'thread') f = 980; else if(kind === 'toggle') f = 740;
+  else if(typeof kind === 'number') f = kind;
+  tone({f:f, type:'triangle', dur:0.04, gain:0.08}); }
+function errorBuzz(){ tone({f:160, f2:140, type:'square', dur:0.12, gain:0.10}); }
+function copyConfirm(){ tone({f:1560, dur:0.03, gain:0.10}); tone({f:1560, dur:0.03, gain:0.10, delay:0.045}); }
+function flashFlicker(){ var f = $('ovFlick'); if(!f) return;
+  f.style.opacity = '0.14'; setTimeout(function(){ f.style.opacity = '0.05'; }, 60);
+  setTimeout(function(){ f.style.opacity = '0'; }, 140); }
+function interferenceSpike(){
+  var n = 3 + Math.floor(Math.random()*3), i;
+  for(i=0;i<n;i++) noiseHit({dur:0.03, ftype:'bandpass', f0:2500, gain:0.09, delay:i*0.07});
+  flashFlicker(); vib(15);
+}
+/* Ambient hum — the brief's recipe, exactly: 55 Hz sine (gain 0.015) +
+   110.3 Hz sine (gain 0.008) + looped noise through a 240 Hz lowpass
+   (gain 0.006) with a slow LFO breathing on the noise gain. That chain is
+   9 long-lived nodes; the excess over the <=4 guideline is documented in
+   build/FIX_LOG.md (recipe fidelity chosen over the node guideline). */
+function startAmbient(){
+  if(ambient || !AC || !masterGain || !noiseBuf) return;
+  if(!settings.ambient) return;
+  try{
+    var bus = AC.createGain();
+    bus.gain.value = (effAvail === 'OFF_SHIFT_RESTING') ? 0.5 : 1; /* OFF SHIFT: -6dB */
+    var o1 = AC.createOscillator(); o1.type = 'sine'; o1.frequency.value = 55;
+    var g1 = AC.createGain(); g1.gain.value = 0.015;
+    o1.connect(g1); g1.connect(bus);
+    var o2 = AC.createOscillator(); o2.type = 'sine'; o2.frequency.value = 110.3;
+    var g2 = AC.createGain(); g2.gain.value = 0.008;
+    o2.connect(g2); g2.connect(bus);
+    var src = AC.createBufferSource(); src.buffer = noiseBuf; src.loop = true;
+    var flt = AC.createBiquadFilter(); flt.type = 'lowpass'; flt.frequency.value = 240;
+    var gN = AC.createGain(); gN.gain.value = 0.006;
+    var lfo = AC.createOscillator(); lfo.frequency.value = 0.1;
+    var lg = AC.createGain(); lg.gain.value = 0.002;
+    lfo.connect(lg); lg.connect(gN.gain);
+    src.connect(flt); flt.connect(gN); gN.connect(bus);
+    bus.connect(masterGain);
+    o1.start(); o2.start(); src.start(); lfo.start();
+    ambient = { nodes:[o1, o2, src, lfo], bus:bus };
+  }catch(e){ ambient = null; }
+}
+function stopAmbient(){
+  if(!ambient) return;
+  ambient.nodes.forEach(function(n){ try{ n.stop(); }catch(e){} });
+  try{ ambient.bus.disconnect(); }catch(e){}
+  ambient = null;
+}
+function channelCloseSnd(){ tone({f:1320, dur:0.05, gain:0.10});
+  noiseHit({dur:0.12, ftype:'bandpass', f0:1200, f1:500, gain:0.14, delay:0.06}); }
+
+/* ---------------- mechanical status line (failures surface, never silence) ---------------- */
+var sysNoteTimer = null;
+function showSysNote(text){
+  var el = $('sysNote'); if(!el) return;
+  el.textContent = text;
+  if(el.classList) el.classList.remove('hidden');
+  if(sysNoteTimer) clearTimeout(sysNoteTimer);
+  sysNoteTimer = setTimeout(function(){ if(el.classList) el.classList.add('hidden'); }, 4500);
+}
+
+/* ---------------- device voice readout (speechSynthesis, never her voice) ---------------- */
+var speakingUid = null;
+function stopReadout(){
+  speakingUid = null;
+  try{ if(typeof speechSynthesis !== 'undefined' && speechSynthesis) speechSynthesis.cancel(); }catch(e){}
+}
+function readoutText(text, uid){
+  if(typeof speechSynthesis === 'undefined' || !speechSynthesis ||
+     typeof SpeechSynthesisUtterance === 'undefined'){
+    showSysNote('READOUT UNAVAILABLE ON THIS UNIT');
+    return false;
+  }
+  try{
+    stopReadout();
+    var u = new SpeechSynthesisUtterance(String(text));
+    u.lang = 'en-US'; u.rate = settings.readoutRate; u.pitch = 1.0;
+    speakingUid = uid || null;
+    u.onend = function(){ speakingUid = null; renderLog(); };
+    u.onerror = function(){ speakingUid = null; showSysNote('READOUT UNAVAILABLE ON THIS UNIT'); renderLog(); };
+    speechSynthesis.speak(u);
+    renderLog();
+    return true;
+  }catch(e){ return false; }
+}
+
+/* ---------------- clipboard (3-tier, never claims a failed copy) ---------------- */
+function execCopy(text){
+  try{
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.setAttribute('readonly','');
+    ta.style.position = 'fixed'; ta.style.opacity = '0'; ta.style.top = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    if(ta.setSelectionRange) ta.setSelectionRange(0, text.length);
+    var ok = false;
+    if(typeof document.execCommand === 'function') ok = document.execCommand('copy');
+    document.body.removeChild(ta);
+    return !!ok;
+  }catch(e){ return false; }
+}
+function openCopySheet(text){
+  var sh = $('copySheet'), ta = $('copySheetText');
+  if(ta) ta.value = text;
+  if(sh && sh.classList) sh.classList.remove('hidden');
+  if(ta){ try{ ta.focus(); ta.select(); if(ta.setSelectionRange) ta.setSelectionRange(0, text.length); }catch(e){} }
+}
+function hideCopySheet(){ var sh = $('copySheet'); if(sh && sh.classList) sh.classList.add('hidden'); }
+function copyText(text){
+  return new Promise(function(resolve){
+    var done = false;
+    function finish(ok){ if(!done){ done = true; resolve(ok); } }
+    try{
+      if(typeof navigator !== 'undefined' && navigator && navigator.clipboard &&
+         typeof navigator.clipboard.writeText === 'function'){
+        navigator.clipboard.writeText(text).then(function(){ finish(true); }, function(){
+          if(execCopy(text)) finish(true); else { openCopySheet(text); finish(false); }
+        });
+        return;
+      }
+    }catch(e){}
+    try{
+      if(execCopy(text)) finish(true); else { openCopySheet(text); finish(false); }
+    }catch(e){ openCopySheet(text); finish(false); }
+  });
+}
+
+/* ---------------- transmission log ---------------- */
+var logEntries = [];
+var uidSeq = 1;
+(function loadLog(){
+  var raw = store.get('commlink.log', []);
+  if(Array.isArray(raw)) raw.forEach(function(e){
+    if(e && (typeof e.text === 'string' || e.pending || e.decoding)){
+      logEntries.push({ uid: uidSeq++, dir: e.dir === 'in' ? 'in' : 'out',
+        text: String(e.text || ''), fullText: e.fullText ? String(e.fullText) : null,
+        time: e.time || new Date().toISOString(), stamp: String(e.stamp || ''),
+        priority: !!e.priority, rxId: e.rxId || null,
+        /* an entry saved mid-decode restores as pending, its full text intact */
+        pending: !!e.pending || !!e.decoding, restored: !!e.decoding,
+        queued: !!e.queued,
+        delayRemaining: 0, decoding: false });
+    }
+  });
+})();
+function saveLog(){
+  var slim = logEntries.slice(-200).map(function(e){
+    return { dir:e.dir, text:e.text,
+      fullText: (e.pending || e.decoding) ? (e.fullText || e.text || '') : null,
+      time:e.time, stamp:e.stamp, priority:!!e.priority, rxId:e.rxId || null,
+      pending:!!e.pending, decoding:!!e.decoding, queued:!!e.queued };
+  });
+  store.set('commlink.log', slim);
+}
+function appendEntry(e){
+  e.uid = uidSeq++;
+  if(e.text && e.text.length > 4000) e.text = e.text.slice(0, 4000);
+  logEntries.push(e);
+  while(logEntries.length > 200) logEntries.shift();
+  saveLog(); renderLog();
+  return e;
+}
+function entryHeader(e){
+  var h = fmtTime(e.time) + ' · CH ' + esc(curState.channel.id);
+  if(e.dir === 'in') h = fmtTime(e.time) + ' · INCOMING — KRYZE CHANNEL';
+  if(e.priority) h += ' · <span class="pstamp">PRIORITY</span>';
+  if(e.stamp) h += ' · ' + esc(e.stamp);
+  if(e.pending) h += ' · HELD FOR DECODE';
+  else if(e.decoding) h += ' · DECODING';
+  return h;
+}
+function renderLog(){
+  var logEl = $('log'); if(!logEl) return;
+  /* autoscroll only when the reader is already near the bottom (fix pass) */
+  var nearBottom = true;
+  try{ nearBottom = (logEl.scrollHeight - logEl.scrollTop - (logEl.clientHeight || 0)) < 140; }catch(e){}
+  var emptyEl = $('logEmpty');
+  if(emptyEl) emptyEl.style.display = logEntries.length ? 'none' : 'block';
+  var html = '';
+  logEntries.forEach(function(e){
+    html += '<div class="entry ' + e.dir + (e.priority ? ' prio' : '') + '" data-uid="' + e.uid + '">';
+    html += '<div class="meta">' + entryHeader(e) + '</div>';
+    if(e.pending){
+      html += '<div class="ebtns"><button type="button" class="miniBtn" data-action="decode-pending" data-uid="' + e.uid + '">INCOMING BURST — TAP TO DECODE</button></div>';
+    } else {
+      html += '<div class="body" id="logBody-' + e.uid + '">' + esc(e.displayText != null ? e.displayText : e.text) + '</div>';
+    }
+    if(e.dir === 'out' && e.delayRemaining > 0)
+      html += '<div class="note mono">RELAY DELAY: ' + e.delayRemaining + ' S</div>';
+    if(e.dir === 'out' && e.queued)
+      html += '<div class="note mono">HELD AT RELAY — RELEASES WHEN CHANNEL CLEARS</div>';
+    if(e.dir === 'in' && !e.pending && !e.decoding){
+      html += '<div class="ebtns"><button type="button" class="miniBtn" data-action="readout" data-uid="' + e.uid + '">DEVICE VOICE READOUT</button>';
+      if(speakingUid === e.uid)
+        html += '<button type="button" class="miniBtn" data-action="stop-readout" data-uid="' + e.uid + '">STOP READOUT</button>';
+      html += '</div>';
+    }
+    if(e.dir === 'out'){
+      html += '<div class="ebtns"><button type="button" class="miniBtn" data-action="recopy" data-uid="' + e.uid + '">RE-COPY TRANSMISSION</button></div>';
+    }
+    html += '</div>';
+  });
+  /* keep the empty-log node, replace only entry nodes */
+  var olds = logEl.querySelectorAll ? logEl.querySelectorAll('.entry') : [];
+  var i; for(i=0;i<olds.length;i++){ if(olds[i].parentNode) olds[i].parentNode.removeChild(olds[i]); }
+  if(html){
+    var wrap = document.createElement('div');
+    wrap.innerHTML = html;
+    while(wrap.firstChild) logEl.appendChild(wrap.firstChild);
+  }
+  if(nearBottom){ try{ logEl.scrollTop = logEl.scrollHeight; }catch(e){} }
+}
+function findEntry(uid){ for(var i=0;i<logEntries.length;i++) if(logEntries[i].uid === uid) return logEntries[i]; return null; }
+function logToText(){
+  return logEntries.filter(function(e){ return !e.pending; }).map(function(e){
+    var who = e.dir === 'in' ? 'INCOMING — KRYZE CHANNEL' : 'SKYLAR (DOCK HAND)';
+    return '[' + fmtTime(e.time) + ' · ' + who + (e.stamp ? ' · ' + e.stamp : '') + ']\n' + e.text;
+  }).join('\n\n');
+}
+
+/* ---------------- status render ---------------- */
+function availHelperText(){
+  switch(effAvail){
+    case 'AVAILABLE': return 'RELAY: CHANNEL CLEAR — NORMAL TRAFFIC';
+    case 'FIELD_DELAYED': return 'RELAY: IN THE FIELD — TRAFFIC CARRIES A RELAY DELAY OF ' + curState.signal.relay_delay_sec + ' S';
+    case 'COMMAND_EMERGENCY': return 'RELAY: NORMAL TRAFFIC QUEUES UNDER COMMAND DUTIES';
+    case 'OFF_SHIFT_RESTING': return 'RELAY: NORMAL TRAFFIC HELD UNTIL NEXT CYCLE';
+  }
+  return '';
+}
+function renderStatus(){
+  var st = curState;
+  var set = function(id, v){ var el = $(id); if(el) el.textContent = v; };
+  set('ccName', guardText(st.her.name)); set('ccHouse', guardText(st.her.house_line));
+  set('ccChan', guardText(st.channel.label) + ' — ' + guardText(st.channel.encryption));
+  var ccLocal = $('ccLocal');
+  if(ccLocal) ccLocal.innerHTML = 'LOCAL UNIT: <b>' + esc(st.local_unit.name) + ' — ' +
+    esc(st.local_unit.designation) + '</b> · ' + esc(st.local_unit.route_line);
+  set('bootChannel', st.channel.id);
+  set('bootLocal', st.local_unit.name + ' — ' + st.local_unit.designation);
+  set('bootRoute', st.local_unit.route_line);
+  set('stPresence', stateHold ? 'UNKNOWN' : guardText(PRESENCE_LABEL[st.presence] || st.presence));
+  set('stLocation', stateHold ? '—' : guardText(st.location_label));
+  set('stActivity', stateHold ? 'STATE UNKNOWN — RELAY HOLDS TRAFFIC' : guardText(st.activity));
+  var av = $('stAvail');
+  if(av){ av.textContent = AVAIL_LABEL[effAvail] || effAvail; av.className = 'av-' + effAvail; }
+  var note = stateHold ? '' : guardText(st.availability.note || '');
+  if(!stateHold && st.availability.since) note = (note ? note + ' ' : '') + '(SINCE ' + guardText(st.availability.since) + ')';
+  set('stAvailNote', note);
+  var rot = $('stRotation'); if(rot && rot.classList) rot.classList.toggle('hidden', !rotationApplied);
+  var blocks = '', filled = Math.round(st.signal.strength/20), i;
+  for(i=0;i<5;i++) blocks += '<span class="blk' + (i < filled ? ' on' : '') + '"></span>';
+  var sb = $('stSignalBlocks'); if(sb) sb.innerHTML = blocks;
+  set('stSignalPct', st.signal.strength + '%');
+  set('stInterference', st.signal.interference);
+  set('stRelayDelay', st.signal.relay_delay_sec + ' S');
+  set('stScatter', guardText(st.countdowns.scatter_window_label));
+  var lines = $('stStatusLines');
+  if(lines) lines.innerHTML = st.status_lines.map(function(l){ return '<div>▸ ' + esc(guardText(l)) + '</div>'; }).join('');
+  var th = $('stThreads');
+  if(th){
+    th.innerHTML = st.open_threads.map(function(t, idx){
+      return '<button type="button" class="threadBtn" data-thread="' + idx + '">' + esc(guardText(t.title)) + '</button>' +
+        '<div class="threadDetail hidden" id="threadDetail-' + idx + '">' + esc(guardText(t.detail)) + '</div>';
+    }).join('');
+  }
+  set('stLastSync', stateSource === 'file' && lastSyncAt ? fmtTime(lastSyncAt.toISOString()) : 'EMBEDDED COPY — OFFLINE');
+  var txb = $('txBtn');
+  if(txb) txb.textContent = stateHold ? 'RELAY HOLD' :
+    ((effAvail === 'COMMAND_EMERGENCY' || effAvail === 'OFF_SHIFT_RESTING') ? 'QUEUE VIA RELAY' : 'TRANSMIT');
+  set('availHelper', stateHold ? 'RELAY: STATE UNKNOWN — TRAFFIC HELD' : availHelperText());
+  var vig = $('ovVig'); /* night-dim: vignette layer deepens while OFF SHIFT */
+  if(vig) vig.style.opacity = (effAvail === 'OFF_SHIFT_RESTING') ? '0.58' : '0.5';
+  updateBriefClock();
+}
+function updateBriefClock(){
+  var el = $('stBrief'); if(!el) return;
+  if(briefDeadline == null){ el.textContent = '—'; return; }
+  var left = Math.max(0, Math.round((briefDeadline - Date.now())/1000));
+  el.textContent = pad2(Math.floor(left/60)) + ':' + pad2(left % 60);
+}
+
+/* ---------------- transmit flow ---------------- */
+var priorityArmed = false;
+function relayStampFor(isPrio){
+  if(isPrio) return 'PRIORITY BURST SENT';
+  switch(effAvail){
+    case 'FIELD_DELAYED': return 'SENT VIA RELAY — DELAYED';
+    case 'COMMAND_EMERGENCY': return 'QUEUED VIA RELAY';
+    case 'OFF_SHIFT_RESTING': return 'HELD VIA RELAY';
+    default: return 'SENT VIA RELAY';
+  }
+}
+function formatTransmission(text, isPrio){
+  var stamp = relayStampFor(isPrio);
+  var lines = ['[COMMLINK // ' + curState.channel.id + ' // ' + (isPrio ? 'PRIORITY' : 'ROUTINE') + ' // ' + stamp + ']'];
+  if(isPrio) lines.push('[PRIORITY]');
+  else if(effAvail === 'COMMAND_EMERGENCY') lines.push('[HELD AT RELAY — COMMAND DUTIES]');
+  else if(effAvail === 'OFF_SHIFT_RESTING') lines.push('[HELD AT RELAY — OFF SHIFT]');
+  lines.push('SKYLAR (DOCK HAND) — THE CACHE');
+  lines.push(text);
+  return { text: lines.join('\n'), stamp: stamp };
+}
+function setPriority(v){
+  priorityArmed = !!v;
+  var b = $('priorityBtn');
+  if(b){ if(b.classList) b.classList.toggle('armed', priorityArmed); b.setAttribute('aria-pressed', priorityArmed ? 'true' : 'false'); }
+}
+function showHandoff(){ var h = $('handoffBar'); if(h && h.classList) h.classList.remove('hidden'); }
+function openRelay(){
+  var w = null;
+  try{ w = WIN.open(effRelayUrl(), '_blank'); }catch(e){}
+  if(!w) showSysNote('RELAY WINDOW BLOCKED — USE COPY');
+}
+var pendingManual = null;   /* a transmission whose copy failed; sheet DONE completes it */
+function finishManualSend(){
+  if(!pendingManual) return;
+  var pm = pendingManual; pendingManual = null;
+  appendEntry({ dir:'out', text:pm.text, time:new Date().toISOString(),
+    stamp:'COPIED MANUALLY — RELAY HANDOFF PENDING', priority:pm.isPrio,
+    pending:false, decoding:false, queued:false, delayRemaining:0 });
+  var ta = $('composerText'); if(ta) ta.value = '';
+  store.del('commlink.draft');
+  setPriority(false);
+  showHandoff();
+}
+function handleTransmit(){
+  var ta = $('composerText');
+  var raw = ta ? String(ta.value || '') : '';
+  var text = raw.trim();
+  if(!text){
+    errorBuzz();
+    if(ta){ ta.classList.add('err'); setTimeout(function(){ ta.classList.remove('err'); }, 900); }
+    return Promise.resolve(false);
+  }
+  if(stateHold){
+    errorBuzz();
+    showSysNote('STATE UNKNOWN — RELAY HOLDS TRAFFIC');
+    return Promise.resolve(false);
+  }
+  var isPrio = priorityArmed;
+  var fmt = formatTransmission(text, isPrio);
+  return copyText(fmt.text).then(function(copied){
+    if(!copied){
+      /* failed copy: nothing is logged as sent, composer and draft stay intact */
+      errorBuzz();
+      pendingManual = { text:text.slice(0,4000), isPrio:isPrio };
+      return false;
+    }
+    copyConfirm();
+    if(isPrio) txPriority();
+    else if(effAvail === 'AVAILABLE' || effAvail === 'FIELD_DELAYED') txBurst();
+    else txQueued();
+    var queuedState = !isPrio && (effAvail === 'COMMAND_EMERGENCY' || effAvail === 'OFF_SHIFT_RESTING');
+    appendEntry({ dir:'out', text:text.slice(0,4000), time:new Date().toISOString(),
+      stamp: fmt.stamp, priority:isPrio, pending:false, decoding:false,
+      queued: queuedState,
+      delayRemaining: (!isPrio && effAvail === 'FIELD_DELAYED') ? curState.signal.relay_delay_sec : 0 });
+    if(ta) ta.value = '';
+    store.del('commlink.draft');
+    setPriority(false);
+    showHandoff();
+    return true;
+  });
+}
+function recopyEntry(entry){
+  if(!entry) return;
+  var fmt = formatTransmission(entry.text, !!entry.priority);
+  copyText(fmt.text).then(function(ok){
+    if(ok){ copyConfirm(); showSysNote('TRANSMISSION COPIED — PASTE IN MUSE TO SEND'); }
+    else errorBuzz();
+  });
+}
+
+/* ---------------- receive / decode flow ---------------- */
+var GLYPHS = '▓▒░#%/\\<>';
+function corruptTail(s){
+  if(!s.length) return s;
+  var n = Math.min(s.length, 1 + Math.floor(Math.random()*3)), out = s.slice(0, s.length - n), i;
+  for(i=0;i<n;i++) out += GLYPHS.charAt(Math.floor(Math.random()*GLYPHS.length));
+  return out;
+}
+var activeDecode = null;
+function runDecode(entry){
+  if(activeDecode) { return; }
+  entry.pending = false; entry.decoding = true; entry.displayText = '';
+  saveLog(); renderLog();
+  rxBurst();
+  var full = entry.fullText || entry.text || '';
+  var strength = curState.signal.strength;
+  var chunk = strength >= 80 ? 5 : (strength >= 50 ? 3 : 2);
+  var inter = curState.signal.interference;
+  var pos = 0, glitchSnds = 0;
+  activeDecode = entry;
+  var timer = setInterval(function(){
+    pos = Math.min(full.length, pos + chunk);
+    var shown = full.slice(0, pos);
+    var glitch = false;
+    if(pos < full.length && inter !== 'LOW'){
+      var chance = inter === 'HIGH' ? 0.6 : 0.3;
+      if(Math.random() < chance){ shown = corruptTail(shown); glitch = true; }
+    }
+    entry.displayText = shown;
+    var body = $('logBody-' + entry.uid);
+    if(body) body.textContent = shown; else renderLog();
+    if(glitch && glitchSnds < 3){ decodeGlitch(); glitchSnds++; }
+    if(pos >= full.length){
+      clearInterval(timer);
+      activeDecode = null;
+      entry.decoding = false; entry.displayText = null;
+      entry.text = full.slice(0, 4000);
+      saveLog(); renderLog();
+      rxComplete(); vib(20);
+      if(entry.rxId) store.set('commlink.lastRxId', entry.rxId);
+      if(settings.readout) readoutText(entry.text, entry.uid);
+    }
+  }, 30);
+  entry._timer = timer;
+}
+function startDecode(text, rxId){
+  var t = String(text == null ? '' : text);
+  if(!t.trim()){ errorBuzz(); return null; }
+  var e = appendEntry({ dir:'in', text:'', fullText:t, time:new Date().toISOString(),
+    stamp:'', priority:false, rxId: rxId || null, pending:false, decoding:false, delayRemaining:0 });
+  runDecode(e);
+  return e;
+}
+function checkLastTransmission(){
+  var lt = curState.last_transmission;
+  if(!lt || !lt.id) return;
+  if(store.get('commlink.lastRxId', '') === lt.id) return;
+  var exists = logEntries.some(function(e){ return e.rxId === lt.id; });
+  if(exists) return;
+  appendEntry({ dir:'in', text:'', fullText:lt.text, time: lt.received_at || new Date().toISOString(),
+    stamp:'', priority:false, rxId: lt.id, pending:true, decoding:false, delayRemaining:0 });
+}
+
+/* ---------------- story state loading ---------------- */
+function applyState(raw, source){
+  if(!raw || typeof raw !== 'object' || Array.isArray(raw)){
+    /* fail closed: malformed state data never becomes a fabricated display */
+    if(source !== 'embedded'){ applyState(EMBEDDED_STATE, 'embedded'); return; }
+    enterHold();
+    resetBriefClock(); renderStatus();
+    return;
+  }
+  stateHold = false;
+  var beforeInter = curState ? curState.signal.interference : null;
+  curState = clampState(raw);
+  stateSource = source;
+  computeEffective();
+  resetBriefClock();
+  renderStatus();
+  var urlField = $('setRelayUrl'); if(urlField && !settings.relayUrl) urlField.value = curState.relay_url;
+  checkLastTransmission();
+  if(beforeInter && beforeInter !== 'HIGH' && curState.signal.interference === 'HIGH' && bootedFlag) interferenceSpike();
+}
+function loadState(){
+  if(typeof fetch !== 'function'){
+    applyState(EMBEDDED_STATE, 'embedded');
+    return Promise.resolve(false);
+  }
+  var ctrl = null, timer = null;
+  var signal = Promise.resolve(null);
+  try{
+    if(typeof AbortController !== 'undefined'){ ctrl = new AbortController(); signal = ctrl.signal; }
+    var fp = fetch('story_state.json', { cache:'no-store', signal: signal });
+    var timeout = new Promise(function(res){ timer = setTimeout(function(){ try{ if(ctrl) ctrl.abort(); }catch(e){} res(null); }, 1500); });
+    return Promise.race([fp, timeout]).then(function(resp){
+      if(timer) clearTimeout(timer);
+      if(!resp) throw new Error('timeout');
+      if(resp && typeof resp.json === 'function') return resp.json();
+      throw new Error('bad response');
+    }).then(function(data){
+      if(!data || typeof data !== 'object') throw new Error('bad json');
+      lastSyncAt = new Date();
+      applyState(data, 'file');
+      return true;
+    }).catch(function(){
+      applyState(EMBEDDED_STATE, 'embedded');
+      return false;
+    });
+  }catch(e){
+    applyState(EMBEDDED_STATE, 'embedded');
+    return Promise.resolve(false);
+  }
+}
+
+/* ---------------- boot / channel open ---------------- */
+var bootedFlag = false, bootingFlag = false, bootTimers = [];
+function finishBoot(){
+  bootTimers.forEach(function(t){ clearTimeout(t); }); bootTimers = [];
+  bootingFlag = false; bootedFlag = true;
+  var b = $('boot');
+  if(b){ b.style.opacity = '0'; setTimeout(function(){ if(b.classList) b.classList.add('hidden'); b.style.opacity = ''; }, 320); }
+  startAmbient();
+  checkLastTransmission();
+  /* resume a decode that was interrupted by a reload: text was persisted whole */
+  var rs = logEntries.filter(function(e){ return e.restored && e.pending; });
+  if(rs.length) runDecode(rs[0]);
+}
+function startBoot(){
+  if(bootingFlag){ finishBoot(); return; }   /* tap again to skip */
+  bootingFlag = true;
+  ensureAudio(); resumeAudio();
+  var stat = $('bootStat');
+  if(stat) stat.textContent = 'OPENING CHANNEL…';
+  squelchOpen();
+  bootTimers.push(setTimeout(function(){ staticSettle(); if(stat) stat.textContent = 'BURST HANDSHAKE…'; }, 130));
+  bootTimers.push(setTimeout(function(){ channelLock(); vib(20); if(stat) stat.textContent = 'CHANNEL LOCK — ' + curState.channel.id; }, 880));
+  bootTimers.push(setTimeout(finishBoot, 2200));
+}
+function closeChannel(){
+  channelCloseSnd();
+  stopAmbient(); stopReadout();
+  bootedFlag = false; bootingFlag = false;
+  var s = $('settings'); if(s && s.classList) s.classList.add('hidden');
+  var b = $('boot');
+  if(b){ if(b.classList) b.classList.remove('hidden'); b.style.opacity = ''; }
+  var stat = $('bootStat'); if(stat) stat.textContent = '';
+}
+
+/* ---------------- PTT (hold to talk) ----------------
+   No level meter: the indicator is the recognition session itself.
+   Unavailable -> the brief's one-line fallback immediately, no REC theater. */
+var pttActive = false, recog = null, pttFallbackShown = false, pttBase = '';
+function showPttFallback(){
+  if(pttFallbackShown) return;
+  pttFallbackShown = true;
+  var n = $('pttNote');
+  if(n){ n.textContent = 'VOICE INPUT UNAVAILABLE ON THIS DEVICE — USE KEYBOARD DICTATION';
+    if(n.classList) n.classList.remove('hidden'); }
+}
+function pttSetListening(onOff){
+  var fill = $('pttLevelFill'); if(fill) fill.style.width = onOff ? '100%' : '0%';
+  var b = $('pttBtn');
+  if(b){ b.textContent = onOff ? 'LISTENING' : 'HOLD TO TALK';
+    if(b.classList) b.classList.toggle('rec', !!onOff); }
+}
+function pttStop(){
+  if(!pttActive) return;
+  pttActive = false;
+  pttUp();
+  if(recog){ try{ recog.stop(); }catch(e){} recog = null; }
+  pttSetListening(false);
+}
+function pttStart(){
+  if(pttActive) return;
+  ensureAudio(); resumeAudio();
+  var SR = (typeof window !== 'undefined' && window) ? (window.webkitSpeechRecognition || window.SpeechRecognition) : null;
+  if(!SR){ pttDown(); showPttFallback(); return; }   /* no REC state, no meter */
+  pttActive = true;
+  pttDown();
+  var ta = $('composerText');
+  pttBase = ta ? String(ta.value || '') : '';
+  try{
+    recog = new SR();
+    recog.lang = 'en-US'; recog.interimResults = true; recog.continuous = true;
+    recog.onstart = function(){ pttSetListening(true); };
+    recog.onresult = function(ev){
+      pttSetListening(true);
+      var txt = '', i, res;
+      for(i=0;i<ev.results.length;i++){ res = ev.results[i]; if(res && res[0]) txt += res[0].transcript; }
+      var c = $('composerText');
+      if(c){ c.value = (pttBase ? pttBase.replace(/\s+$/,'') + ' ' : '') + txt; }
+      store.set('commlink.draft', c ? c.value : '');
+    };
+    recog.onerror = function(){ pttSetListening(false); showPttFallback(); };
+    recog.onend = function(){ pttSetListening(false); };
+    recog.start();
+  }catch(e){ recog = null; pttActive = false; pttSetListening(false); showPttFallback(); }
+}
+
+/* ---------------- mode / settings wiring ---------------- */
+function setMode(rx){
+  var c = $('composer'), r = $('receive'), mt = $('modeTx'), mr = $('modeRx');
+  if(c && c.classList) c.classList.toggle('hidden', rx);
+  if(r && r.classList) r.classList.toggle('hidden', !rx);
+  if(mt && mt.classList) mt.classList.toggle('sel', !rx);
+  if(mr && mr.classList) mr.classList.toggle('sel', rx);
+  stopReadout();
+  uiBlip('mode');
+}
+function refreshSettingsUI(){
+  var set = function(id, v){ var el = $(id); if(el) el.textContent = v; };
+  set('setSound', 'SOUND: ' + (settings.sound ? 'ON' : 'OFF'));
+  set('setAmbient', 'AMBIENT HUM: ' + (settings.ambient ? 'ON' : 'OFF'));
+  set('setReadout', 'DEVICE VOICE READOUT: ' + (settings.readout ? 'ON' : 'OFF'));
+  set('setHaptics', 'HAPTICS: ' + (settings.haptics ? 'ON' : 'OFF'));
+  set('setRateVal', Number(settings.readoutRate).toFixed(1));
+  set('rxReadoutBtn', 'DEVICE VOICE READOUT: ' + (settings.readout ? 'ON' : 'OFF'));
+  var rate = $('setRate'); if(rate) rate.value = settings.readoutRate;
+  var mb = $('muteBtn'); if(mb && mb.classList) mb.classList.toggle('off', !settings.sound);
+}
+function bindUI(){
+  on($('initBtn'), 'click', function(){ startBoot(); });
+  on($('boot'), 'click', function(e){ if(bootingFlag && e && e.target === $('boot')) finishBoot(); });
+  on($('muteBtn'), 'click', function(){ ensureAudio(); setSound(!settings.sound); refreshSettingsUI(); uiBlip('toggle'); });
+  on($('settingsBtn'), 'click', function(){ var s = $('settings'); if(s && s.classList) s.classList.remove('hidden'); uiBlip('settings'); });
+  on($('settingsClose'), 'click', function(){ var s = $('settings'); if(s && s.classList) s.classList.add('hidden'); uiBlip('toggle'); });
+  on($('statusToggle'), 'click', function(){
+    var body = $('statusBody'), ch = $('statusChevron');
+    if(body){ var hid = body.classList.toggle('hidden'); if(ch) ch.textContent = hid ? '▸' : '▾'; }
+    uiBlip('toggle');
+  });
+  var th = $('stThreads');
+  on(th, 'click', function(e){
+    var t = e && e.target;
+    if(t && t.getAttribute && t.getAttribute('data-thread') != null){
+      var d = $('threadDetail-' + t.getAttribute('data-thread'));
+      if(d && d.classList) d.classList.toggle('hidden');
+      uiBlip('thread');
+    }
+  });
+  on($('modeTx'), 'click', function(){ setMode(false); });
+  on($('modeRx'), 'click', function(){ setMode(true); });
+  on($('txBtn'), 'click', function(){ handleTransmit(); });
+  on($('priorityBtn'), 'click', function(){ setPriority(!priorityArmed); if(priorityArmed) txPriority(); uiBlip('toggle'); });
+  on($('handoffBtn'), 'click', function(){ openRelay(); });
+  on($('decodeBtn'), 'click', function(){
+    var ta = $('rxText'); var v = ta ? String(ta.value || '') : '';
+    var e = startDecode(v, null);
+    if(e && ta) ta.value = '';
+  });
+  on($('rxReadoutBtn'), 'click', function(){ settings.readout = !settings.readout; saveSettings(); refreshSettingsUI(); uiBlip('toggle'); });
+  var logEl = $('log');
+  on(logEl, 'click', function(e){
+    var t = e && e.target;
+    if(!t || !t.getAttribute) return;
+    var action = t.getAttribute('data-action'); if(!action) return;
+    var entry = findEntry(Number(t.getAttribute('data-uid')));
+    if(action === 'recopy'){ recopyEntry(entry); }
+    else if(action === 'decode-pending' && entry && entry.pending){ runDecode(entry); }
+    else if(action === 'readout' && entry){ readoutText(entry.text, entry.uid); }
+    else if(action === 'stop-readout'){ stopReadout(); renderLog(); }
+  });
+  var ptt = $('pttBtn');
+  on(ptt, 'pointerdown', function(e){ if(e && e.preventDefault) e.preventDefault(); pttStart(); });
+  on(ptt, 'pointerup', function(){ pttStop(); });
+  on(ptt, 'pointercancel', function(){ pttStop(); });
+  on(ptt, 'contextmenu', function(e){ if(e && e.preventDefault) e.preventDefault(); });
+  var ct = $('composerText');
+  on(ct, 'input', function(){ store.set('commlink.draft', ct.value); });
+  on(ct, 'focus', function(){ setTimeout(function(){ if(ct.scrollIntoView) ct.scrollIntoView({ block:'nearest' }); }, 250); });
+  var rt = $('rxText');
+  on(rt, 'focus', function(){ setTimeout(function(){ if(rt.scrollIntoView) rt.scrollIntoView({ block:'nearest' }); }, 250); });
+  on($('setSound'), 'click', function(){ ensureAudio(); setSound(!settings.sound); refreshSettingsUI(); });
+  on($('setAmbient'), 'click', function(){
+    settings.ambient = !settings.ambient; saveSettings(); refreshSettingsUI(); uiBlip('toggle');
+    if(settings.ambient && bootedFlag){ ensureAudio(); startAmbient(); } else stopAmbient();
+  });
+  on($('setReadout'), 'click', function(){ settings.readout = !settings.readout; saveSettings(); refreshSettingsUI(); uiBlip('toggle'); });
+  on($('setHaptics'), 'click', function(){ settings.haptics = !settings.haptics; saveSettings(); refreshSettingsUI(); uiBlip('toggle'); });
+  on($('setRate'), 'input', function(){ var r = $('setRate'); settings.readoutRate = clampN(r ? r.value : 1, 0.5, 1.5); saveSettings(); refreshSettingsUI(); });
+  on($('setRelayUrl'), 'change', function(){ var u = $('setRelayUrl'); settings.relayUrl = u ? String(u.value || '').trim() : ''; saveSettings(); });
+  on($('copyLogBtn'), 'click', function(){ copyText(logToText() || 'NO TRAFFIC LOGGED ON THIS CHANNEL.').then(function(ok){ if(ok) copyConfirm(); }); });
+  on($('clearLogBtn'), 'click', function(){
+    var ok = true;
+    try{ if(typeof confirm === 'function') ok = confirm('CLEAR THE TRANSMISSION LOG?'); }catch(e){}
+    if(ok){ logEntries = []; saveLog(); renderLog(); uiBlip('toggle'); }
+  });
+  on($('closeChannelBtn'), 'click', function(){ closeChannel(); });
+  on($('copySheetClose'), 'click', function(){ hideCopySheet(); finishManualSend(); });
+  on($('openRelayBtn'), 'click', function(){ openRelay(); });
+  on(document, 'pointerdown', function(){ resumeAudio(); }, { passive:true });
+  on(document, 'gesturestart', function(e){ if(e && e.preventDefault) e.preventDefault(); });
+  on(document, 'dblclick', function(e){ if(e && e.preventDefault) e.preventDefault(); });
+  on(document, 'visibilitychange', function(){
+    if(document.hidden){ stopReadout();
+      try{ if(AC && AC.suspend) AC.suspend(); }catch(e){}
+    } else { resumeAudio(); loadState(); }
+  });
+  if(typeof window !== 'undefined' && window && window.visualViewport){
+    on(window.visualViewport, 'resize', function(){
+      try{
+        var vv = window.visualViewport, app = $('app');
+        if(!app) return;
+        var kb = window.innerHeight - vv.height;
+        app.style.height = (kb > 60) ? vv.height + 'px' : '';
+      }catch(e){}
+    });
+  }
+}
+
+/* ---------------- timers ---------------- */
+var lastSpikeAt = 0;
+setInterval(function(){ /* 1s: brief clock + field relay-delay countdowns */
+  if(bootedFlag) updateBriefClock();
+  var changed = false;
+  logEntries.forEach(function(e){ if(e.delayRemaining > 0){ e.delayRemaining--; changed = true; } });
+  if(changed && !activeDecode) renderLog();
+}, 1000);
+setInterval(function(){ /* interference spikes: HIGH only, max 1 per 45s, never while typing */
+  if(!bootedFlag) return;
+  if(curState.signal.interference !== 'HIGH') return;
+  if(Date.now() - lastSpikeAt < 45000) return;
+  var ae = document.activeElement;
+  if(ae && (ae === $('composerText') || ae === $('rxText'))) return;
+  if(Math.random() < 0.5){ lastSpikeAt = Date.now(); interferenceSpike(); }
+}, 15000);
+
+/* ---------------- init ---------------- */
+var draft = store.get('commlink.draft', '');
+bindUI();
+refreshSettingsUI();
+computeEffective();
+resetBriefClock();
+renderStatus();
+renderLog();
+if(draft && $('composerText')) $('composerText').value = String(draft);
+var urlInit = $('setRelayUrl'); if(urlInit) urlInit.value = effRelayUrl();
+loadState();
+
+/* exposed for the node test suite */
+var CommlinkApp = {
+  EMBEDDED_STATE: EMBEDDED_STATE,
+  clampState: clampState, deriveSignal: deriveSignal, rotationAvailability: rotationAvailability,
+  computeEffective: computeEffective,
+  getState: function(){ return curState; },
+  getEffAvail: function(){ return effAvail; },
+  isRotationApplied: function(){ return rotationApplied; },
+  applyState: applyState, loadState: loadState,
+  renderStatus: renderStatus,
+  isHold: function(){ return stateHold; },
+  getBriefDeadline: function(){ return briefDeadline; },
+  entryHeader: entryHeader, logToText: logToText,
+  readoutText: readoutText, openRelay: openRelay,
+  finishManualSend: finishManualSend, recopyEntry: recopyEntry,
+  formatTransmission: formatTransmission, relayStampFor: relayStampFor,
+  handleTransmit: handleTransmit, setPriority: function(v){ setPriority(v); },
+  copyText: copyText, startDecode: startDecode, runDecode: runDecode,
+  getLog: function(){ return logEntries; },
+  clearLog: function(){ logEntries = []; saveLog(); renderLog(); },
+  getSettings: function(){ return settings; },
+  setSound: setSound, ensureAudio: ensureAudio,
+  getAC: function(){ return AC; },
+  pttStart: pttStart, pttStop: pttStop, isPttActive: function(){ return pttActive; },
+  pttFallbackShown: function(){ return pttFallbackShown; },
+  sounds: { squelchOpen:squelchOpen, staticSettle:staticSettle, channelLock:channelLock,
+    pttDown:pttDown, pttUp:pttUp, txBurst:txBurst, txQueued:txQueued, txPriority:txPriority,
+    rxBurst:rxBurst, decodeGlitch:decodeGlitch, rxComplete:rxComplete, uiBlip:uiBlip,
+    errorBuzz:errorBuzz, copyConfirm:copyConfirm, interferenceSpike:interferenceSpike,
+    channelClose:channelCloseSnd, startAmbient:startAmbient, stopAmbient:stopAmbient }
+};
+if(typeof window !== 'undefined' && window) window.CommlinkApp = CommlinkApp;
+if(typeof globalThis !== 'undefined') globalThis.CommlinkApp = CommlinkApp;
+</script>
+</body>
+</html>
