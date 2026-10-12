@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "updated_at": "2026-10-11T22:45:00-07:00",
+  "channel": { "id": "KRYZE-PRIVATE-01", "label": "SECURE CHANNEL", "encryption": "BURST / ROTATING KEY" },
+  "her": { "name": "BO-KATAN KRYZE", "house_line": "HOUSE KRYZE · NITE OWLS" },
+  "local_unit": { "name": "SKYLAR", "designation": "\"DOCK HAND\"", "route_line": "BEROYA YARDS → THE CACHE" },
+  "presence": "ON_STATION",
+  "location_label": "THE CACHE — DEAD MINING STATION, FORGOTTEN ROUTE",
+  "activity": "PREPARING THE CAPTAINS' BRIEF",
+  "availability": {
+    "state": "COMMAND_EMERGENCY",
+    "note": "CAPTAINS' BRIEF IN ~40 MIN. NORMAL TRAFFIC QUEUES.",
+    "since": "START OF EVENING CYCLE"
+  },
+  "signal": { "strength": 94, "interference": "LOW", "relay_delay_sec": 1 },
+  "status_lines": [
+    "STANDING RULE: WHAT TOUCHES SKYLAR IS TOLD TO HIM FIRST, BY HER, IN PRIVATE.",
+    "SKYLAR ATTENDS THE CAPTAINS' BRIEF FROM THIS CYCLE FORWARD.",
+    "IMPERIAL FILE: HIS FACE AND BLOOD-TEST RESULT ARE ON RECORD. HE CANNOT GO HOME.",
+    "HER SHIP: GRAY KOM'RK. THE GAUNTLET WAS DESTROYED AT BEROYA."
+  ],
+  "open_threads": [
+    { "id": "T-INQ", "title": "INQUISITOR — PORT TO PORT",
+      "detail": "THE INQUISITOR FROM THE SUNDARI HANDOVER HAS A COMMAND AND A BUDGET. HE IS MOVING PORT TO PORT ASKING ABOUT SKYLAR. HIS LINE POINTS TOWARD THE CACHE." },
+    { "id": "T-SCATTER", "title": "SCATTER — DECISION AT THE BRIEF",
+      "detail": "SHE GIVES THE CACHE A MONTH, TWO AT MOST, BEFORE THE STATION MUST SCATTER. THE DECISION GOES TO THE CAPTAINS' BRIEF FIRST." },
+    { "id": "T-RANN", "title": "RANN — MENDING",
+      "detail": "SHOT COVERING THE RUN TO THE KOM'RK AT SUNDARI. SURVIVED. MENDING." }
+  ],
+  "countdowns": { "captains_brief_min": 40, "scatter_window_label": "A MONTH. TWO AT MOST." },
+  "last_transmission": null,
+  "relay_url": "https://muse.ai"
+}
